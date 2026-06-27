@@ -43,7 +43,9 @@ def create_database(app):
 
 
 def create_app():
-    app = Flask(__name__)
+    app = Flask(__name__,
+                static_folder=os.path.join(os.path.dirname(__file__), 'static'),
+                template_folder=os.path.join(os.path.dirname(__file__), 'templates'))
 
     # Fix Neon/Heroku-style postgres:// → postgresql:// (SQLAlchemy 2.x requirement)
     raw_db_url = os.getenv("DATABASE_URL", f"sqlite:///{DB_NAME}")
