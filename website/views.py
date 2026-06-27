@@ -147,9 +147,52 @@ def posts(username):
     )
 
 
-@views.route("/api/search")
+@views.route("/api/check-username")
 @login_required
-def search_users():
+def check_username():
+    """Check if a username is available (excluding the current user's own username)."""
+    new_username = request.args.get('username', '').strip()
+    if not new_username:
+        return jsonify({'available': False, 'error': 'Username cannot be empty.'})
+    if len(new_username) < 2:
+        return jsonify({'available': False, 'error': 'Too short — minimum 2 characters.'})
+    if len(new_username) > 150:
+        return jsonify({'available': False, 'error': 'Too long — maximum 150 characters.'})
+    if new_username == current_user.username:
+        return jsonify({'available': False, 'error': "That's already your username."})
+
+    existing = User.query.filter(
+        User.username.ilike(new_username),
+        User.id != current_user.id
+    ).first()
+    if existing:
+        return jsonify({'available': False, 'error': 'That username is already taken.'})
+    return jsonify({'available': True, 'message': f'"{new_username}" is available!'})
+
+
+@views.route("/api/update-username", methods=['POST'])
+@login_required
+def update_username():
+    data = request.get_json() or {}
+    new_username = (data.get('username') or '').strip()
+
+    if not new_username or len(new_username) < 2 or len(new_username) > 150:
+        return jsonify({'error': 'Invalid username.'}), 400
+    if new_username == current_user.username:
+        return jsonify({'error': "That's already your username."}), 400
+
+    existing = User.query.filter(
+        User.username.ilike(new_username),
+        User.id != current_user.id
+    ).first()
+    if existing:
+        return jsonify({'error': 'That username is already taken.'}), 409
+
+    old_username = current_user.username
+    current_user.username = new_username
+    db.session.commit()
+    return jsonify({'message': f'Username changed from "{old_username}" to "{new_username}".',
+                    'new_username': new_username})
     query = request.args.get('q', '').strip()
     if not query:
         return jsonify({'found': False, 'error': 'Enter a username to search.'}), 400

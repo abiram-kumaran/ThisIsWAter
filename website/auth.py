@@ -48,10 +48,16 @@ def send_otp():
     session['otp_created_at'] = time.time()
 
     # Create and send the email
-    msg = Message('Your This is WAter. Verification Code', 
-                  sender='abiram.yeager18@gmail.com', # Updated to your sender email
+    msg = Message('Your ThisIs WAter. Verification Code',
+                  sender='thisisswater@gmail.com',
                   recipients=[email])
-    msg.body = f'Welcome to This is WAter.! Your OTP for sign up is: {otp}'
+    msg.body = (
+        f"Yo 👋 Welcome to ThisIs WAter.\n\n"
+        f"Here's your OTP: {otp}\n\n"
+        f"It's basically your VIP pass, so don't share it with anyone "
+        f"(not even your bestie 😭). It expires in 10 minutes.\n\n"
+        f"If you didn't ask for this, you can safely ignore this message."
+    )
 
     try:
         mail.send(msg)

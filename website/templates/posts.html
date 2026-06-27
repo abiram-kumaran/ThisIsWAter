@@ -339,7 +339,7 @@
     </div>
 
     <div class="profile-info">
-      <h2>{{ username }}</h2>
+      <h2 id="profileUsername">{{ username }}</h2>
       <div class="profile-meta">
         <span><i class="fas fa-pen"></i> {{ posts | length }} post{{ 's' if posts | length != 1 }}</span>
       </div>
@@ -352,7 +352,12 @@
         </p>
         {% endif %}
         {% if user.id == profile_user.id %}
-        <span class="edit-bio-link" onclick="openBioModal()">Edit</span>
+        <div style="display:flex;align-items:center;gap:12px;margin-top:8px;">
+          <span class="edit-bio-link" onclick="openBioModal()">Edit bio</span>
+          <span class="edit-bio-link" onclick="openUsernameModal()" style="color:#555;">
+            <i class="fas fa-at" style="margin-right:3px;font-size:11px;"></i>Change username
+          </span>
+        </div>
         {% endif %}
       </div>
     </div>
@@ -468,6 +473,39 @@
     </form>
   </div>
 </div>
+
+<!-- Username edit modal -->
+<div class="bio-modal-overlay" id="usernameModal" onclick="if(event.target===this)closeUsernameModal()">
+  <div class="bio-modal">
+    <h3><i class="fas fa-at" style="margin-right:8px;font-size:14px;"></i>Change Username</h3>
+    <div style="margin-bottom:14px;">
+      <label style="font-size:12px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;">
+        Current username
+      </label>
+      <div style="font-size:15px;font-weight:700;color:#111;padding:8px 12px;background:#f5f5f5;border-radius:10px;">
+        @{{ profile_user.username }}
+      </div>
+    </div>
+    <div style="margin-bottom:6px;">
+      <label style="font-size:12px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;">
+        New username
+      </label>
+      <input type="text" id="newUsernameInput"
+             placeholder="Enter new username…" maxlength="150"
+             oninput="checkUsernameAvailability(this.value)"
+             style="width:100%;padding:11px 14px;background:#f5f5f5;border:1.5px solid #e0e0e0;
+                    border-radius:10px;font-size:14px;font-family:'Poppins',sans-serif;
+                    outline:none;color:#111;transition:border-color 0.2s;" />
+    </div>
+    <!-- Availability indicator -->
+    <div id="usernameStatus" style="font-size:12px;min-height:18px;margin-bottom:14px;padding:0 2px;"></div>
+    <div class="bio-modal-actions">
+      <button type="button" class="bio-cancel" onclick="closeUsernameModal()">Cancel</button>
+      <button type="button" class="bio-save" id="saveUsernameBtn" onclick="saveUsername()" disabled
+              style="opacity:0.4;cursor:not-allowed;">Save</button>
+    </div>
+  </div>
+</div>
 {% endif %}
 {% endblock %}
 
@@ -489,9 +527,6 @@
   function closeBioModal() {
     document.getElementById('bioModal').classList.remove('open');
   }
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') closeBioModal();
-  });
 
   function uploadPhoto(input) {
     if (!input.files || !input.files[0]) return;
@@ -514,5 +549,105 @@
       .then(r => r.json())
       .then(() => location.reload());
   }
+
+  /* ── Username edit ── */
+  var _usernameCheckTimer = null;
+  var _usernameAvailable = false;
+
+  function openUsernameModal() {
+    document.getElementById('newUsernameInput').value = '';
+    document.getElementById('usernameStatus').textContent = '';
+    document.getElementById('usernameStatus').style.color = '';
+    var btn = document.getElementById('saveUsernameBtn');
+    btn.disabled = true; btn.style.opacity = '0.4'; btn.style.cursor = 'not-allowed';
+    _usernameAvailable = false;
+    document.getElementById('usernameModal').classList.add('open');
+    setTimeout(function() { document.getElementById('newUsernameInput').focus(); }, 120);
+  }
+
+  function closeUsernameModal() {
+    document.getElementById('usernameModal').classList.remove('open');
+    if (_usernameCheckTimer) clearTimeout(_usernameCheckTimer);
+  }
+
+  function checkUsernameAvailability(val) {
+    var input  = document.getElementById('newUsernameInput');
+    var status = document.getElementById('usernameStatus');
+    var btn    = document.getElementById('saveUsernameBtn');
+    _usernameAvailable = false;
+    btn.disabled = true; btn.style.opacity = '0.4'; btn.style.cursor = 'not-allowed';
+
+    val = val.trim();
+    if (!val) { status.textContent = ''; return; }
+    if (val.length < 2) {
+      status.textContent = 'Too short — minimum 2 characters.';
+      status.style.color = '#c0392b';
+      input.style.borderColor = '#fca5a5';
+      return;
+    }
+
+    status.textContent = 'Checking…';
+    status.style.color = '#aaa';
+    input.style.borderColor = '#d0d0d0';
+
+    if (_usernameCheckTimer) clearTimeout(_usernameCheckTimer);
+    _usernameCheckTimer = setTimeout(function() {
+      fetch('/api/check-username?username=' + encodeURIComponent(val))
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (data.available) {
+            status.textContent = '✓ ' + data.message;
+            status.style.color = '#16a34a';
+            input.style.borderColor = '#86efac';
+            _usernameAvailable = true;
+            btn.disabled = false; btn.style.opacity = '1'; btn.style.cursor = 'pointer';
+          } else {
+            status.textContent = '✗ ' + data.error;
+            status.style.color = '#c0392b';
+            input.style.borderColor = '#fca5a5';
+            _usernameAvailable = false;
+          }
+        })
+        .catch(function() {
+          status.textContent = 'Could not check — try again.';
+          status.style.color = '#aaa';
+        });
+    }, 420);  // debounce 420ms
+  }
+
+  function saveUsername() {
+    if (!_usernameAvailable) return;
+    var newUsername = document.getElementById('newUsernameInput').value.trim();
+    var btn = document.getElementById('saveUsernameBtn');
+    btn.textContent = 'Saving…'; btn.disabled = true;
+
+    fetch('/api/update-username', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: newUsername })
+    })
+    .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
+    .then(function(res) {
+      if (!res.ok) {
+        document.getElementById('usernameStatus').textContent = '✗ ' + (res.data.error || 'Failed to save.');
+        document.getElementById('usernameStatus').style.color = '#c0392b';
+        btn.textContent = 'Save'; btn.disabled = false;
+        return;
+      }
+      // Update the displayed username immediately
+      var el = document.getElementById('profileUsername');
+      if (el) el.textContent = res.data.new_username;
+      closeUsernameModal();
+      // Redirect to new profile URL so the page stays consistent
+      window.location.href = '/posts/' + encodeURIComponent(res.data.new_username);
+    })
+    .catch(function() {
+      btn.textContent = 'Save'; btn.disabled = false;
+    });
+  }
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') { closeBioModal(); closeUsernameModal(); }
+  });
 </script>
 {% endblock %}
