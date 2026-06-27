@@ -1,0 +1,119 @@
+from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
+from flask_login import LoginManager
+from flask_mail import Mail
+import os
+
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass  # dotenv not installed, will use hardcoded defaults
+
+db = SQLAlchemy()
+DB_NAME = "project.db"
+
+# Create the mail object here so auth.py can import it
+mail = Mail()
+
+def create_database(app):
+    with app.app_context():
+        from sqlalchemy import inspect, text
+
+        db.create_all()
+
+        inspector = inspect(db.engine)
+        if 'user' in inspector.get_table_names():
+            columns = {col['name'] for col in inspector.get_columns('user')}
+            if 'bio' not in columns:
+                db.session.execute(text("ALTER TABLE user ADD COLUMN bio VARCHAR(500) DEFAULT ''"))
+                db.session.commit()
+                print("Added bio column to user table")
+            if 'profile_pic' not in columns:
+                db.session.execute(text("ALTER TABLE user ADD COLUMN profile_pic VARCHAR(300) DEFAULT ''"))
+                db.session.commit()
+                print("Added profile_pic column to user table")
+
+def create_app():
+    app = Flask(__name__)
+    app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL", f"sqlite:///{DB_NAME}")
+    app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev-secret-key-change-in-production")
+
+    # Mail Configuration
+    app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
+    app.config['MAIL_PORT'] = int(os.getenv('MAIL_PORT', 465))
+    app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME', '')
+    app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD', '')
+    app.config['MAIL_USE_TLS'] = os.getenv('MAIL_USE_TLS', 'False').lower() == 'true'
+    app.config['MAIL_USE_SSL'] = os.getenv('MAIL_USE_SSL', 'True').lower() == 'true'
+
+    # Bind extensions to the app
+    db.init_app(app)
+    mail.init_app(app)  # <-- NEW: Bind mail to the app
+
+    # Import models
+    from . import models
+    from .models import User, Post, Comment, Like, FriendRequest, Message
+
+    # Create the database
+    create_database(app)
+
+    # Register blueprints
+    from .views import views
+    from .auth import auth
+    app.register_blueprint(views, url_prefix="/")
+    app.register_blueprint(auth, url_prefix="/")
+
+    # Initialize Login Manager
+    login_manager = LoginManager()
+    login_manager.login_view = "auth.login"
+    login_manager.login_message = "Please log in to continue."
+    login_manager.login_message_category = "info"
+    login_manager.init_app(app)
+
+    @login_manager.unauthorized_handler
+    def unauthorized():
+        from flask import redirect, url_for, request as req
+        return redirect(url_for('auth.login', next=req.url))
+
+    @login_manager.user_loader
+    def load_user(user_id):
+        return db.session.get(User, int(user_id))
+
+    @app.context_processor
+    def inject_globals():
+        from flask_login import current_user
+        from .models import User as UserModel
+        if current_user.is_authenticated:
+            # Find all accepted friend requests involving the current user
+            from .models import FriendRequest
+            accepted_reqs = FriendRequest.query.filter(
+                ((FriendRequest.sender_id == current_user.id) | (FriendRequest.receiver_id == current_user.id)) & 
+                (FriendRequest.status == 'accepted')
+            ).all()
+            
+            friend_ids = []
+            for req in accepted_reqs:
+                friend_ids.append(req.receiver_id if req.sender_id == current_user.id else req.sender_id)
+            
+            friends = UserModel.query.filter(UserModel.id.in_(friend_ids)).order_by(UserModel.username).all() if friend_ids else []
+            
+            # Query suggested users: not current user, not already friends, and no pending requests
+            all_reqs = FriendRequest.query.filter(
+                (FriendRequest.sender_id == current_user.id) | (FriendRequest.receiver_id == current_user.id)
+            ).all()
+            
+            exclude_ids = {current_user.id}
+            for r in all_reqs:
+                exclude_ids.add(r.sender_id)
+                exclude_ids.add(r.receiver_id)
+                
+            suggestions = UserModel.query.filter(~UserModel.id.in_(exclude_ids)).order_by(UserModel.username).limit(5).all()
+            
+            return {
+                'all_users': friends,
+                'suggested_users': suggestions
+            }
+        return {}
+
+    return app

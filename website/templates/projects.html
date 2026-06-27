@@ -1,0 +1,389 @@
+{% extends "base.html" %}
+{% block title %}Projects{% endblock %}
+{% block nav_projects %}active{% endblock %}
+
+{% block extra_styles %}
+<link href="{{ url_for('static', filename='effects/blob-cursor.css') }}" rel="stylesheet" />
+<style>
+  /* Override main body background and hide existing colorful grainient for pure black Buttermax theme */
+  body {
+    background-color: #101010 !important;
+  }
+  .page-bg-container, .dot-field-container {
+    display: none !important;
+  }
+
+  /* Projects Layout Container */
+  .projects-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+    color: #ffffff;
+    font-family: '__myFont_2f1432', Helvetica, Arial, sans-serif;
+  }
+
+  /* Buttermax-style Header */
+  .projects-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 30px 0;
+    margin-bottom: 60px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .proj-back-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #ffffff !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+  }
+  .proj-back-btn:hover {
+    border-color: #FFD600;
+    color: #FFD600 !important;
+    transform: translateX(-4px);
+  }
+
+  .proj-logo svg {
+    display: block;
+  }
+
+  .proj-nav-actions {
+    display: flex;
+    gap: 12px;
+  }
+
+  .proj-nav-link {
+    text-decoration: none !important;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 10px 24px;
+    border-radius: 30px;
+    transition: all 0.3s ease;
+    border: 1.5px solid transparent;
+  }
+
+  /* Active style: filled yellow with black text */
+  .proj-nav-link.active {
+    background-color: #FFD600 !important;
+    color: #101010 !important;
+    border-color: #FFD600 !important;
+  }
+
+  /* Inactive styles: outlined with yellow border on hover */
+  .proj-nav-link:not(.active) {
+    color: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+  }
+
+  .proj-nav-link:not(.active):hover {
+    border-color: #FFD600 !important;
+    color: #FFD600 !important;
+  }
+
+  /* Hero Section */
+  .projects-hero {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    margin-bottom: 50px;
+    gap: 30px;
+  }
+
+  .works-title {
+    font-size: clamp(48px, 8vw, 84px);
+    font-weight: 900;
+    line-height: 0.9;
+    letter-spacing: -2px;
+    margin: 0;
+    text-transform: uppercase;
+    color: #ffffff !important;
+  }
+
+  .yellow-text {
+    color: #FFD600 !important;
+  }
+
+  /* Filters Section */
+  .category-filters {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  .filter-btn {
+    background: transparent;
+    border: none;
+    color: #868686 !important;
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+    padding: 6px 0;
+    position: relative;
+    transition: color 0.3s ease;
+  }
+
+  .filter-btn:hover {
+    color: #ffffff !important;
+  }
+
+  .filter-btn.active {
+    color: #FFD600 !important;
+  }
+
+  .filter-btn::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background-color: #FFD600;
+    transition: width 0.3s ease;
+  }
+
+  .filter-btn.active::after {
+    width: 100%;
+  }
+
+  /* Projects Grid */
+  .projects-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 32px;
+    margin-bottom: 80px;
+  }
+
+  .project-card {
+    background: #181818;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease;
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  .project-card.hidden {
+    display: none;
+  }
+
+  .project-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+  }
+
+  .project-image-wrap {
+    position: relative;
+    width: 100%;
+    padding-top: 56.25%; /* 16:9 Aspect Ratio */
+    background-color: #222;
+    overflow: hidden;
+  }
+
+  .project-image-wrap img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .project-card:hover .project-image-wrap img {
+    transform: scale(1.05);
+  }
+
+  /* Hover Info Overlay */
+  .project-hover-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(16, 16, 16, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .project-card:hover .project-hover-overlay {
+    opacity: 1;
+  }
+
+  .project-desc {
+    font-size: 14px;
+    line-height: 1.6;
+    color: #e0e0e0 !important;
+    text-align: center;
+    margin: 0;
+    font-weight: 500 !important;
+  }
+
+  /* Card Info */
+  .project-info {
+    padding: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .project-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #ffffff !important;
+    margin: 0;
+  }
+
+  .project-category-tag {
+    font-size: 11px;
+    text-transform: uppercase;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: #FFD600 !important;
+    background: rgba(255, 214, 0, 0.1);
+    padding: 4px 10px;
+    border-radius: 12px;
+  }
+
+  @media (max-width: 768px) {
+    .projects-hero {
+      flex-direction: column;
+      align-items: flex-start;
+      margin-bottom: 30px;
+    }
+    .category-filters {
+      width: 100%;
+      overflow-x: auto;
+      padding-bottom: 10px;
+      scrollbar-width: none;
+    }
+    .category-filters::-webkit-scrollbar {
+      display: none;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="projects-container">
+  
+  <header class="projects-header">
+    <a href="/home" class="proj-back-btn" aria-label="Back"><i class="fas fa-arrow-left"></i></a>
+    <div class="proj-logo">
+      <svg viewBox="0 0 100 40" width="80" height="32">
+        <ellipse cx="50" cy="20" rx="40" ry="16" fill="none" stroke="#FFD600" stroke-width="2.5" />
+        <ellipse cx="50" cy="20" rx="28" ry="16" fill="none" stroke="#FFD600" stroke-width="1.5" />
+        <ellipse cx="50" cy="20" rx="16" ry="16" fill="none" stroke="#FFD600" stroke-width="1.5" />
+        <ellipse cx="50" cy="20" rx="4" ry="16" fill="none" stroke="#FFD600" stroke-width="1.5" />
+        <line x1="50" y1="4" x2="50" y2="36" stroke="#FFD600" stroke-width="2" />
+      </svg>
+    </div>
+    <div class="proj-nav-actions">
+      <a href="/projects" class="proj-nav-link active">Works</a>
+      <a href="/posts/{{ current_user.username }}" class="proj-nav-link">Profile</a>
+    </div>
+  </header>
+
+  <div class="projects-hero">
+    <div class="hero-left">
+      <h1 class="works-title">ALL<br><span class="yellow-text">WORKS</span></h1>
+    </div>
+    <div class="hero-right">
+      <div class="category-filters">
+        <button class="filter-btn active" data-category="all">All</button>
+        <button class="filter-btn" data-category="branding">Branding</button>
+        <button class="filter-btn" data-category="web">Web</button>
+        <button class="filter-btn" data-category="game">Game</button>
+        <button class="filter-btn" data-category="ai">AI</button>
+        <button class="filter-btn" data-category="platform">Platform</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="projects-grid">
+    {% for proj in projects %}
+    <div class="project-card" data-category="{{ proj.category }}">
+      <div class="project-image-wrap">
+        <img src="{{ url_for('static', filename=proj.image) }}" alt="{{ proj.title }}">
+        <div class="project-hover-overlay">
+          <p class="project-desc">{{ proj.desc }}</p>
+        </div>
+      </div>
+      <div class="project-info">
+        <h3 class="project-title">{{ proj.title }}</h3>
+        <span class="project-category-tag">{{ proj.category }}</span>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<!-- Load GSAP CDN for smooth cursor animation -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<script src="{{ url_for('static', filename='effects/blob-cursor.js') }}"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    // 1. Initialize the BlobCursor
+    window.blobCursor = new BlobCursor({
+      blobType: 'circle',
+      fillColor: '#ffffff',
+      trailCount: 5,
+      sizes: [10, 125, 125, 125, 125],
+      innerSizes: [65, 35, 35, 35, 35],
+      innerColor: 'rgba(0, 0, 0, 0.85)',
+      opacities: [0.3, 0.6, 0.6, 0.6, 0.6],
+      shadowColor: 'rgba(0,0,0,0.45)',
+      shadowBlur: 5,
+      shadowOffsetX: 6,
+      shadowOffsetY: 6,
+      filterStdDeviation: 30,
+      useFilter: true,
+      fastDuration: 0.64,
+      slowDuration: 0.5,
+      zIndex: 160
+    });
+
+    // 2. Add client-side project filtering logic
+    const filterButtons = document.querySelectorAll('.filter-btn');
+    const projectCards = document.querySelectorAll('.project-card');
+
+    filterButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        // Toggle active button states
+        filterButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        const activeCategory = btn.getAttribute('data-category');
+
+        // Filter the grid items
+        projectCards.forEach(card => {
+          const cardCategory = card.getAttribute('data-category');
+          if (activeCategory === 'all' || cardCategory === activeCategory) {
+            card.classList.remove('hidden');
+          } else {
+            card.classList.add('hidden');
+          }
+        });
+      });
+    });
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,505 @@
+/* ── Grainient page background (authenticated pages) ── */
+.page-bg-container {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+/* Hide on auth pages — dots take over there */
+body.auth-page .page-bg-container {
+  display: none;
+}
+
+/* ── DotField background (login/signup only) ── */
+.dot-field-container {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+/* Hide dot-field on authenticated pages — Grainient takes over */
+body:not(.auth-page) .dot-field-container {
+  display: none;
+}
+
+.dot-field-container canvas,
+.dot-field-container svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* ── TV boot overlay ── */
+.tv-boot {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: #000;
+  pointer-events: all;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.tv-boot.tv-boot-done {
+  pointer-events: none;
+  animation: tvBootFadeOut 0.5s ease forwards;
+}
+
+@keyframes tvBootFadeOut {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+.tv-boot-line {
+  position: absolute;
+  width: 100%;
+  height: 2px;
+  background: #fff;
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.8), 0 0 60px rgba(255, 255, 255, 0.4);
+  animation: tvLineExpand 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes tvLineExpand {
+  0% {
+    height: 2px;
+    opacity: 1;
+  }
+
+  40% {
+    height: 2px;
+    opacity: 1;
+  }
+
+  100% {
+    height: 100%;
+    opacity: 1;
+    background: #fff;
+    box-shadow: none;
+  }
+}
+
+.tv-boot-flash {
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  opacity: 0;
+  animation: tvFlash 0.35s ease 0.5s forwards;
+}
+
+@keyframes tvFlash {
+  0% {
+    opacity: 0.85;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+.tv-boot-scanlines {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(0deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 0, 0, 0.08) 2px,
+      rgba(0, 0, 0, 0.08) 4px);
+  opacity: 0;
+  animation: tvScanIn 0.3s ease 0.85s forwards;
+}
+
+@keyframes tvScanIn {
+  0% {
+    opacity: 0.6;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+.tv-boot-noise {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  animation: tvNoise 0.2s steps(4) 0.45s 2;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.4'/%3E%3C/svg%3E");
+}
+
+@keyframes tvNoise {
+
+  0%,
+  100% {
+    opacity: 0.15;
+  }
+
+  50% {
+    opacity: 0.35;
+  }
+}
+
+/* ── Dock nav (left) ── */
+.dock-nav-wrap {
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: var(--nav-w, 64px);
+  z-index: 1002;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.dock-panel {
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 12px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.05));
+  border-top: 1px solid rgba(255, 255, 255, 0.8);
+  border-left: 1px solid rgba(255, 255, 255, 0.8);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(24px) saturate(120%);
+  -webkit-backdrop-filter: blur(24px) saturate(120%);
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.1), inset 0 2px 8px rgba(255, 255, 255, 0.5);
+  transition: background 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease;
+}
+
+body.messaging-mode .dock-panel {
+  background: rgba(20, 20, 20, 0.85);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+body.auth-page .dock-panel {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.dock-item {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px !important;
+  height: 44px !important;
+  border-radius: 50%;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  outline: none;
+  text-decoration: none;
+  color: #666;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.dock-item::before {
+  content: '';
+  position: absolute;
+  left: -8px;
+  top: 50%;
+  transform: translateY(-50%) scaleY(0);
+  width: 4px;
+  height: 18px;
+  background: #A855F7;
+  border-radius: 4px;
+  transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  transform-origin: center;
+}
+
+.dock-item:hover::before,
+.dock-item.active::before {
+  transform: translateY(-50%) scaleY(1);
+}
+
+.dock-item:hover,
+.dock-item.active {
+  color: #A855F7 !important;
+  background: rgba(168, 85, 247, 0.1) !important;
+  transform: scale(1.12);
+}
+
+body.messaging-mode .dock-item {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+body.messaging-mode .dock-item:hover,
+body.messaging-mode .dock-item.active {
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.15) !important;
+}
+
+body.messaging-mode .dock-item::before {
+  background: #ffffff;
+}
+
+body.auth-page .dock-item {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+body.auth-page .dock-item:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+body.auth-page .dock-item::before {
+  background: #ffffff;
+}
+
+.dock-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  width: 100%;
+  height: 100%;
+}
+
+.dock-label {
+  position: absolute;
+  left: calc(100% + 14px);
+  top: 50%;
+  transform: translateY(-50%);
+  white-space: nowrap;
+  border-radius: 6px;
+  background: #111;
+  color: #fff;
+  padding: 4px 10px;
+  font-size: 11px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+}
+
+body.messaging-mode .dock-label {
+  background: #fff;
+  color: #111;
+}
+
+.dock-item:hover .dock-label {
+  opacity: 1;
+}
+
+.dock-divider {
+  width: 20px;
+  height: 1px;
+  background: rgba(0, 0, 0, 0.1);
+  transition: background 0.4s;
+}
+
+body.messaging-mode .dock-divider {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.nav-profile-avatar {
+  width: 70%;
+  height: 70%;
+  border-radius: 50%;
+  background: #111;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  overflow: hidden;
+}
+
+.nav-profile-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+body.messaging-mode .nav-profile-avatar {
+  background: #fff;
+  color: #111;
+}
+
+/* ── Custom Theme Enhancements ── */
+body {
+  background-color: #ffffff;
+  transition: background-color 0.5s ease;
+}
+
+body.auth-page {
+  background-color: #000000 !important;
+}
+
+/* Messaging Mode Overrides */
+
+#dmEffectsRoot {
+  display: none;
+  /* No longer used — DM bg is pure black via .dm-layout */
+}
+
+body.messaging-mode #dmFullPage,
+body.messaging-mode #dmFullPage * {
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  /* Bold */
+}
+
+body.messaging-mode #dmFullPage input {
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+body.messaging-mode #dmFullPage input::placeholder {
+  color: rgba(255, 255, 255, 0.45) !important;
+}
+
+body.messaging-mode .dm-sidebar {
+  background: rgba(255, 255, 255, 0.03) !important;
+  /* backdrop-filter: blur(12px); <-- REMOVED BLUR */
+}
+
+body.messaging-mode .dm-chat-area {
+  background: rgba(0, 0, 0, 0.15) !important;
+  /* backdrop-filter: blur(6px); <-- REMOVED BLUR */
+}
+
+/* ── Receiver bubble: deep charcoal with soft purple tint ── */
+body.messaging-mode #dmFullPage .dm-bubble.them {
+  background: rgba(255, 255, 255, 0.10) !important;
+  border: 1px solid rgba(168, 85, 247, 0.25) !important;
+  border-radius: 20px 20px 20px 4px !important;
+  box-shadow: 0 4px 24px rgba(168, 85, 247, 0.12);
+}
+
+body.messaging-mode #dmFullPage .dm-bubble.them,
+body.messaging-mode #dmFullPage .dm-bubble.them * {
+  color: #e8d5ff !important;
+  font-weight: 600 !important;
+}
+
+body.messaging-mode #dmFullPage .dm-bubble.them .dm-bubble-time {
+  color: rgba(200, 170, 255, 0.55) !important;
+}
+
+/* ── Sender bubble: vivid purple gradient ── */
+body.messaging-mode #dmFullPage .dm-bubble.me {
+  background: linear-gradient(135deg, #9333ea 0%, #a855f7 60%, #7c3aed 100%) !important;
+  border: none !important;
+  border-radius: 20px 20px 4px 20px !important;
+  box-shadow: 0 4px 24px rgba(168, 85, 247, 0.45), 0 1px 0 rgba(255, 255, 255, 0.12) inset;
+}
+
+body.messaging-mode #dmFullPage .dm-bubble.me,
+body.messaging-mode #dmFullPage .dm-bubble.me * {
+  color: #ffffff !important;
+  font-weight: 700 !important;
+}
+
+body.messaging-mode #dmFullPage .dm-bubble.me .dm-bubble-time {
+  color: rgba(255, 255, 255, 0.55) !important;
+}
+
+/* ── Bubble pop-in animation ── */
+@keyframes bubblePopIn {
+  0% {
+    opacity: 0;
+    transform: translateY(18px) scale(0.88);
+  }
+
+  60% {
+    transform: translateY(-4px) scale(1.03);
+  }
+
+  80% {
+    transform: translateY(2px) scale(0.98);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+body.messaging-mode #dmFullPage .dm-bubble {
+  animation: bubblePopIn 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ── Send button launch animation ── */
+@keyframes sendLaunch {
+  0% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+
+  30% {
+    transform: scale(0.8) rotate(-20deg);
+    opacity: 0.7;
+  }
+
+  55% {
+    transform: scale(1.35) rotate(15deg);
+    opacity: 1;
+  }
+
+  75% {
+    transform: scale(0.95) rotate(-5deg);
+  }
+
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+#dmSendBtn.sending {
+  animation: sendLaunch 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  pointer-events: none;
+}
+
+body.messaging-mode .dm-full-close,
+body.messaging-mode .dm-full-input-row button,
+body.messaging-mode .dm-add-friend-btn {
+  background: rgba(255, 255, 255, 0.15) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  transition: background 0.2s;
+}
+
+body.messaging-mode .dm-full-close:hover,
+body.messaging-mode .dm-full-input-row button:hover,
+body.messaging-mode .dm-add-friend-btn:hover {
+  background: rgba(255, 255, 255, 0.25) !important;
+}
+
+/* ── Post cards: force black text so it's readable on white card bg ── */
+body:not(.auth-page):not(.messaging-mode) .card,
+body:not(.auth-page):not(.messaging-mode) .card *,
+body:not(.auth-page):not(.messaging-mode) .posts-section,
+body:not(.auth-page):not(.messaging-mode) .posts-section * {
+  color: #111111 !important;
+}
+
+/* Keep like icon, delete/action icons white-ish or their own color */
+body:not(.auth-page):not(.messaging-mode) .card .like-icon {
+  color: #555 !important;
+}
+
+body:not(.auth-page):not(.messaging-mode) .card .like-icon.fas {
+  color: #e44 !important;
+  /* liked = red */
+}
+
+body:not(.auth-page):not(.messaging-mode) .card .post-date,
+body:not(.auth-page):not(.messaging-mode) .posts-section .post-date {
+  color: #666 !important;
+}

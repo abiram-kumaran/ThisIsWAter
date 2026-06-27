@@ -1,0 +1,518 @@
+{% extends "base.html" %}
+{% block title %}{{ username }}'s Profile{% endblock %}
+{% block nav_profile %}active{% endblock %}
+
+{% block extra_styles %}
+<style>
+  .profile-page {
+    max-width: min(680px, 100%);
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    min-height: calc(100vh - 160px);
+  }
+
+  .profile-top {
+    display: flex; align-items: flex-start; gap: clamp(16px, 3vw, 24px);
+    margin-bottom: clamp(24px, 5vh, 36px);
+    padding-bottom: clamp(20px, 4vh, 32px);
+    border-bottom: 1px solid #e0e0e0;
+  }
+
+  .back-btn {
+    width: 40px; height: 40px; border-radius: 12px;
+    background: #f0f0f0; border: 1px solid #ddd;
+    color: #111; display: flex; align-items: center; justify-content: center;
+    font-size: 16px; text-decoration: none; transition: all 0.2s; flex-shrink: 0;
+  }
+  .back-btn:hover { background: #111; color: #fff; border-color: #111; }
+
+  .profile-avatar-wrap { position: relative; flex-shrink: 0; }
+  .profile-avatar {
+    width: clamp(80px, 15vw, 100px); height: clamp(80px, 15vw, 100px);
+    border-radius: 50%; background: #111;
+    display: flex; align-items: center; justify-content: center;
+    font-size: clamp(28px, 5vw, 36px); font-weight: 700; color: #fff;
+    border: 3px solid #111; overflow: hidden;
+    transition: transform 0.3s ease;
+  }
+  .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+  .avatar-actions {
+    display: flex; gap: 6px; justify-content: center; margin-top: 10px;
+  }
+  .avatar-btn {
+    background: none; border: 1px solid #ccc; border-radius: 8px;
+    color: #555; font-size: 11px; padding: 4px 10px; cursor: pointer;
+    transition: all 0.2s; font-family: 'Poppins', sans-serif;
+  }
+  .avatar-btn:hover { background: #111; color: #fff; border-color: #111; }
+  .avatar-btn.danger:hover { background: #555; border-color: #555; }
+  #photoInput { display: none; }
+
+  .profile-info { flex: 1; min-width: 0; }
+  .profile-info h2 {
+    font-size: clamp(20px, 4vw, 26px); font-weight: 700;
+    color: #111; margin: 0 0 4px; letter-spacing: -0.5px;
+  }
+  .profile-meta {
+    font-size: 13px; color: #888; margin-bottom: 12px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .profile-meta span { display: flex; align-items: center; gap: 4px; }
+
+  .bio-section { margin-top: 4px; }
+  .bio-text {
+    font-size: 14px; color: #444; line-height: 1.6;
+    max-width: 480px;
+  }
+  .bio-placeholder { color: #aaa; font-style: italic; }
+  .edit-bio-link {
+    display: inline-block; margin-top: 8px;
+    font-size: 13px; color: #111; cursor: pointer;
+    text-decoration: underline; text-underline-offset: 3px;
+    font-weight: 500; transition: opacity 0.2s;
+  }
+  .edit-bio-link:hover { opacity: 0.6; }
+
+  /* Bio modal */
+  .bio-modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+    z-index: 10000; display: none; align-items: center; justify-content: center;
+    padding: 20px; backdrop-filter: blur(4px);
+    animation: fadeIn 0.25s ease;
+  }
+  .bio-modal-overlay.open { display: flex; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  .bio-modal {
+    background: #fff; border-radius: 20px;
+    padding: clamp(24px, 4vw, 32px);
+    width: min(420px, 100%);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    animation: slideUp 0.3s ease;
+  }
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .bio-modal h3 { font-size: 18px; font-weight: 600; color: #111; margin-bottom: 16px; }
+  .bio-modal textarea {
+    width: 100%; min-height: 100px; resize: vertical;
+    background: #f5f5f5; border: 1px solid #ddd; border-radius: 12px;
+    padding: 12px 14px; font-family: 'Poppins', sans-serif;
+    font-size: 14px; color: #111; outline: none;
+    transition: border-color 0.2s;
+  }
+  .bio-modal textarea:focus { border-color: #111; background: #fff; }
+  .bio-modal-actions {
+    display: flex; gap: 10px; margin-top: 16px; justify-content: flex-end;
+  }
+  .bio-modal-actions button {
+    padding: 10px 20px; border-radius: 10px; font-size: 13px;
+    font-weight: 600; cursor: pointer; font-family: 'Poppins', sans-serif;
+    transition: all 0.2s;
+  }
+  .bio-cancel { background: #f0f0f0; border: 1px solid #ddd; color: #555; }
+  .bio-cancel:hover { background: #e0e0e0; }
+  .bio-save { background: #111; border: none; color: #fff; }
+  .bio-save:hover { background: #333; }
+
+  /* Posts */
+  body:not(.auth-page):not(.messaging-mode) .posts-section h3 {
+    font-size: 13px; font-weight: 600; color: #fff !important;
+    text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px;
+  }
+
+  .card {
+    background: #fff; border: 1px solid #e8e8e8;
+    border-radius: 16px; margin-bottom: 16px; overflow: hidden;
+    transition: box-shadow 0.2s, transform 0.2s;
+  }
+  .card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.06); transform: translateY(-2px); }
+
+  .card-header {
+    background: #fafafa; border-bottom: 1px solid #f0f0f0;
+    padding: 12px 16px; display: flex; justify-content: space-between; align-items: center;
+  }
+  .card-header .username-badge {
+    display: flex; align-items: center; gap: 8px;
+    color: #111; font-weight: 600; font-size: 14px;
+  }
+  .user-avatar-sm {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: #111; display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; color: #fff; overflow: hidden;
+  }
+  .user-avatar-sm img { width: 100%; height: 100%; object-fit: cover; }
+
+  .card-body { padding: 16px 18px; }
+  .card-text { font-size: 15px; line-height: 1.65; color: #222; margin-bottom: 14px; }
+  .post-date { font-size: 11px; color: #aaa; margin-bottom: 12px; display: flex; align-items: center; gap: 5px; }
+
+  .like-area { display: flex; align-items: center; gap: 6px; }
+  .like-count { font-size: 13px; color: #aaa; }
+  .like-icon { cursor: pointer; color: #ccc; font-size: 17px; transition: transform 0.2s; }
+  .like-icon:hover { transform: scale(1.3); color: #888; }
+  .fas.fa-thumbs-up.like-icon { color: #111; }
+
+  .btn-group .btn-sm {
+    background: transparent; border: 1px solid #e8e8e8;
+    color: #bbb; border-radius: 8px !important; font-size: 11px; padding: 3px 8px;
+  }
+  .dropdown-menu { background: #fff; border: 1px solid #eee; border-radius: 10px; }
+  .dropdown-item { color: #333; font-size: 13px; }
+  .dropdown-item.text-danger { color: #c0392b !important; }
+
+  .comment-container { margin-top: 12px; padding-top: 12px; border-top: 1px solid #f0f0f0; }
+  .comment-item {
+    padding: 9px 13px; margin-bottom: 8px; border-radius: 10px;
+    background: #f9f9f9; border: 1px solid #f0f0f0;
+    font-size: 13px; color: #444;
+  }
+  .comment-item a { color: #111; text-decoration: none; font-weight: 600; }
+
+  .view-comments-btn {
+    color: #aaa; font-size: 12px; text-decoration: none;
+    display: inline-flex; align-items: center; gap: 5px; margin-bottom: 12px;
+  }
+  .comment-form { display: flex; gap: 8px; margin-top: 10px; }
+  .comment-form input {
+    flex: 1; background: #f5f5f5; border: 1px solid #ececec;
+    border-radius: 10px; color: #111; padding: 8px 14px; font-size: 13px;
+    font-family: 'Poppins', sans-serif; outline: none;
+  }
+  .comment-form button {
+    background: #111; border: none; border-radius: 10px;
+    color: #fff; padding: 8px 14px; font-size: 13px; cursor: pointer;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 20px;
+    margin-top: 40px;
+  }
+  .empty-state p {
+    color: #fff !important;
+    font-size: 1.2rem;
+  }
+
+  .friend-requests-box {
+    background: #fff; border: 1px solid #e8e8e8;
+    border-radius: 16px; padding: 16px; margin-bottom: 24px;
+  }
+  .friend-requests-box h3 {
+    font-size: 14px; font-weight: 600; color: #111;
+    margin-bottom: 12px; display: flex; align-items: center; gap: 8px;
+  }
+  .friend-request-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 0; border-bottom: 1px solid #f0f0f0;
+  }
+  .friend-request-item:last-child { border-bottom: none; }
+  .friend-request-user { display: flex; align-items: center; gap: 10px; }
+  .friend-request-avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: #111; display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700; color: #fff;
+  }
+  .friend-request-name { font-size: 14px; font-weight: 600; color: #111 !important; }
+  .friend-request-actions { display: flex; gap: 8px; }
+  .friend-accept-btn, .friend-decline-btn {
+    border: none; border-radius: 8px; padding: 6px 12px;
+    font-size: 12px; font-weight: 600; cursor: pointer;
+  }
+  .friend-accept-btn { background: #111; color: #fff !important; }
+  .friend-decline-btn { background: #f0f0f0; color: #666 !important; }
+
+  .profile-footer {
+    margin-top: auto; padding-top: 40px;
+    text-align: center;
+  }
+  .logout-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 12px 32px; border-radius: 50px;
+    background: transparent; border: 1.5px solid #111;
+    color: #111; font-size: 14px; font-weight: 600;
+    text-decoration: none; transition: all 0.25s ease;
+    font-family: 'Poppins', sans-serif;
+  }
+  .logout-btn:hover { background: #111; color: #fff; }
+
+  /* Specific overrides to fix white-on-white text issues caused by global base.html rules */
+  body:not(.auth-page):not(.messaging-mode) .friend-requests-box h3 {
+    color: #111 !important;
+  }
+  body:not(.auth-page):not(.messaging-mode) .friend-request-name {
+    color: #111 !important;
+  }
+  body:not(.auth-page):not(.messaging-mode) .friend-accept-btn {
+    color: #fff !important;
+  }
+  body:not(.auth-page):not(.messaging-mode) .friend-decline-btn {
+    color: #666 !important;
+  }
+  body:not(.auth-page):not(.messaging-mode) .card-header a {
+    color: #111 !important;
+  }
+  body:not(.auth-page):not(.messaging-mode) .card-header a:hover {
+    color: #444 !important;
+  }
+  body:not(.auth-page):not(.messaging-mode) .card-text {
+    color: #222 !important;
+  }
+  body:not(.auth-page):not(.messaging-mode) .like-count {
+    color: #aaa !important;
+  }
+  body:not(.auth-page):not(.messaging-mode) .like-icon {
+    color: #ccc !important;
+  }
+  body:not(.auth-page):not(.messaging-mode) .fas.fa-thumbs-up.like-icon {
+    color: #111 !important;
+  }
+  body:not(.auth-page):not(.messaging-mode) .view-comments-btn {
+    color: #aaa !important;
+  }
+  body:not(.auth-page):not(.messaging-mode) .view-comments-btn:hover {
+    color: #555 !important;
+  }
+  body:not(.auth-page):not(.messaging-mode) .comment-item {
+    color: #444 !important;
+  }
+  body:not(.auth-page):not(.messaging-mode) .comment-item a {
+    color: #111 !important;
+  }
+  body:not(.auth-page):not(.messaging-mode) .comment-item span {
+    color: #444 !important;
+  }
+  body:not(.auth-page):not(.messaging-mode) .comment-form input {
+    color: #111 !important;
+  }
+
+  /* Bio Modal overrides */
+  body:not(.auth-page):not(.messaging-mode) .bio-modal h3 {
+    color: #111 !important;
+  }
+  body:not(.auth-page):not(.messaging-mode) .bio-modal textarea {
+    color: #111 !important;
+  }
+  body:not(.auth-page):not(.messaging-mode) .bio-cancel {
+    color: #555 !important;
+  }
+  body:not(.auth-page):not(.messaging-mode) .bio-save {
+    color: #fff !important;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="profile-page">
+
+  <div class="profile-top">
+    {% if user.id != profile_user.id %}
+    <a href="/home" class="back-btn"><i class="fas fa-arrow-left"></i></a>
+    {% endif %}
+
+    <div class="profile-avatar-wrap">
+      <div class="profile-avatar" id="profileAvatar">
+        {% if profile_user.profile_pic %}
+        <img src="{{ url_for('static', filename=profile_user.profile_pic) }}" alt="" id="avatarImg">
+        {% else %}
+        <span id="avatarInitial">{{ username[0] | upper }}</span>
+        {% endif %}
+      </div>
+      {% if user.id == profile_user.id %}
+      <div class="avatar-actions">
+        <button class="avatar-btn" onclick="document.getElementById('photoInput').click()">
+          <i class="fas fa-camera"></i> Upload
+        </button>
+        {% if profile_user.profile_pic %}
+        <button class="avatar-btn danger" onclick="deletePhoto()">
+          <i class="fas fa-trash"></i> Remove
+        </button>
+        {% endif %}
+      </div>
+      <input type="file" id="photoInput" accept="image/png,image/jpeg,image/gif,image/webp" onchange="uploadPhoto(this)">
+      {% endif %}
+    </div>
+
+    <div class="profile-info">
+      <h2>{{ username }}</h2>
+      <div class="profile-meta">
+        <span><i class="fas fa-pen"></i> {{ posts | length }} post{{ 's' if posts | length != 1 }}</span>
+      </div>
+      <div class="bio-section">
+        {% if profile_user.bio %}
+        <p class="bio-text" id="bioDisplay">{{ profile_user.bio }}</p>
+        {% else %}
+        <p class="bio-text bio-placeholder" id="bioDisplay">
+          {% if user.id == profile_user.id %}Tell the world about yourself.{% else %}No bio yet.{% endif %}
+        </p>
+        {% endif %}
+        {% if user.id == profile_user.id %}
+        <span class="edit-bio-link" onclick="openBioModal()">Edit</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  {% if incoming_requests %}
+  <div class="friend-requests-box" id="friendRequestsBox">
+    <h3><i class="fas fa-user-plus"></i> Friend Requests</h3>
+    {% for req in incoming_requests %}
+    <div class="friend-request-item" id="friend-req-{{ req.id }}">
+      <div class="friend-request-user">
+        <div class="friend-request-avatar">{{ req.sender.username[0] | upper }}</div>
+        <span class="friend-request-name">{{ req.sender.username }}</span>
+      </div>
+      <div class="friend-request-actions">
+        <button class="friend-accept-btn" onclick="respondFriendRequest({{ req.id }}, 'accept')">Accept</button>
+        <button class="friend-decline-btn" onclick="respondFriendRequest({{ req.id }}, 'decline')">Decline</button>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="posts-section">
+    <h3>Posts</h3>
+    {% if posts %}
+    {% for post in posts %}
+    <div class="card">
+      <div class="card-header">
+        <div class="username-badge">
+          <div class="user-avatar-sm">
+            {% if profile_user.profile_pic %}
+            <img src="{{ url_for('static', filename=profile_user.profile_pic) }}" alt="">
+            {% else %}
+            {{ username[0] | upper }}
+            {% endif %}
+          </div>
+          {{ username }}
+        </div>
+        <div class="like-area">
+          <span class="like-count" id="likes-count-{{ post.id }}">{{ post.likes | length }}</span>
+          <i class="{{ 'fas' if user.id in post.likes | map(attribute='author') | list else 'far' }} fa-thumbs-up like-icon"
+             id="like-button-{{ post.id }}"
+             onclick="like({{ post.id }})"></i>
+          {% if user.id == post.author or user.username == "Abiram" %}
+          <div class="btn-group ms-2">
+            <button type="button" class="btn btn-sm dropdown-toggle" data-bs-toggle="dropdown"></button>
+            <ul class="dropdown-menu dropdown-menu-end">
+              <li><a href="/delete-post/{{ post.id }}" class="dropdown-item text-danger"><i class="fas fa-trash" style="margin-right:6px;"></i>Delete</a></li>
+            </ul>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="post-date"><i class="fas fa-clock"></i> {% if post.date_created %}{{ post.date_created.strftime('%b %d, %Y') }}{% endif %}</div>
+        <div class="card-text">{{ post.text }}</div>
+        <div class="collapse comment-container" id="comments-{{ post.id }}">
+          {% for comment in post.comments %}
+          <div class="d-flex justify-content-between align-items-center comment-item">
+            <div><a href="/posts/{{ comment.user.username }}">{{ comment.user.username }}</a>: {{ comment.text }}</div>
+            {% if user.id == comment.author or user.id == post.author or user.username == "Abiram" %}
+            <div class="btn-group">
+              <button type="button" class="btn btn-sm dropdown-toggle" data-bs-toggle="dropdown"></button>
+              <ul class="dropdown-menu dropdown-menu-end">
+                <li><a href="/delete-comment/{{ comment.id }}" class="dropdown-item text-danger"><i class="fas fa-trash"></i> Delete</a></li>
+              </ul>
+            </div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        <p class="card-text mt-2">
+          {% if post.comments | length > 0 %}
+          <a class="view-comments-btn" data-bs-toggle="collapse" href="#comments-{{ post.id }}" role="button">
+            <i class="fas fa-comments"></i> View {{ post.comments | length }} comment{{ 's' if post.comments | length > 1 }}
+          </a>
+          {% else %}
+          <small style="color:#ccc; font-size:12px;"><i class="far fa-comment"></i> No comments yet</small>
+          {% endif %}
+        </p>
+        <form class="comment-form" method="POST" action="/create-comment/{{ post.id }}">
+          <input type="text" name="text" placeholder="Write a comment..." />
+          <button type="submit"><i class="fas fa-paper-plane"></i></button>
+        </form>
+      </div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="empty-state">
+      <p>No posts yet{% if user.id == profile_user.id %} — share your first thought{% else %} from {{ username }}{% endif %}.</p>
+    </div>
+    {% endif %}
+  </div>
+
+  {% if user.id == profile_user.id %}
+  <div class="profile-footer">
+    <a href="/logout" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+  </div>
+  {% endif %}
+</div>
+
+{% if user.id == profile_user.id %}
+<div class="bio-modal-overlay" id="bioModal" onclick="if(event.target===this)closeBioModal()">
+  <div class="bio-modal">
+    <h3>Edit Bio</h3>
+    <form method="POST" action="/posts/{{ username }}" id="bioForm">
+      <textarea name="bio" id="bioTextarea" placeholder="Write something about yourself..." maxlength="500">{{ profile_user.bio or '' }}</textarea>
+      <div class="bio-modal-actions">
+        <button type="button" class="bio-cancel" onclick="closeBioModal()">Cancel</button>
+        <button type="submit" class="bio-save">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  function like(postId) {
+    fetch(`/like-post/${postId}`, { method: 'POST' })
+      .then(r => r.json())
+      .then(data => {
+        document.getElementById('like-button-' + postId).className = (data.liked ? 'fas' : 'far') + ' fa-thumbs-up like-icon';
+        document.getElementById('likes-count-' + postId).textContent = data.likes;
+      });
+  }
+
+  function openBioModal() {
+    document.getElementById('bioModal').classList.add('open');
+    document.getElementById('bioTextarea').focus();
+  }
+  function closeBioModal() {
+    document.getElementById('bioModal').classList.remove('open');
+  }
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeBioModal();
+  });
+
+  function uploadPhoto(input) {
+    if (!input.files || !input.files[0]) return;
+    const formData = new FormData();
+    formData.append('photo', input.files[0]);
+    fetch('/api/profile-picture', { method: 'POST', body: formData })
+      .then(r => r.json().then(data => ({ ok: r.ok, data })))
+      .then(({ ok, data }) => {
+        if (!ok) { alert(data.error || 'Upload failed.'); return; }
+        const avatar = document.getElementById('profileAvatar');
+        avatar.innerHTML = `<img src="${data.profile_pic}?t=${Date.now()}" alt="" id="avatarImg">`;
+        location.reload();
+      });
+    input.value = '';
+  }
+
+  function deletePhoto() {
+    if (!confirm('Remove your profile picture?')) return;
+    fetch('/api/profile-picture', { method: 'DELETE' })
+      .then(r => r.json())
+      .then(() => location.reload());
+  }
+</script>
+{% endblock %}

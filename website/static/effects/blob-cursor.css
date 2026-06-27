@@ -1,0 +1,36 @@
+/* ── BlobCursor ── */
+
+/* Hide native cursor everywhere */
+html, body, * {
+  cursor: none !important;
+}
+
+.blob-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  /* z-index set inline by JS (999999) */
+}
+
+.blob-main {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background: transparent;
+  user-select: none;
+  /* overflow MUST be visible so blobs near edges aren't clipped */
+  overflow: visible;
+}
+
+.blob {
+  position: absolute;
+  /* position driven entirely by JS (left/top) — no CSS transform */
+  will-change: left, top;
+}
+
+.inner-dot {
+  position: absolute;
+}

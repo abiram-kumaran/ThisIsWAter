@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Create a Post{% endblock %}
+{% block nav_home %}active{% endblock %}
+
+{% block extra_styles %}
+<style>
+  .create-page {
+    max-width: min(560px, 100%);
+    margin: 0 auto;
+    padding-top: clamp(20px, 5vh, 40px);
+  }
+  .create-page h1 {
+    font-size: clamp(20px, 4vw, 26px);
+    font-weight: 700; color: #111;
+    text-align: center; margin-bottom: 24px;
+  }
+  .create-form {
+    background: #fff; border: 1px solid #e8e8e8;
+    border-radius: 20px; padding: clamp(20px, 4vw, 28px);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+  }
+  .create-form textarea {
+    width: 100%; min-height: 160px; resize: vertical;
+    border: 1px solid #e0e0e0; border-radius: 14px;
+    padding: 16px; font-family: 'Poppins', sans-serif;
+    font-size: 15px; color: #111; outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .create-form textarea:focus {
+    border-color: #111;
+    box-shadow: 0 0 0 3px rgba(0,0,0,0.06);
+  }
+  .create-form textarea::placeholder { color: #bbb; }
+  .create-actions {
+    display: flex; gap: 12px; margin-top: 16px; justify-content: center;
+  }
+  .create-actions button, .create-actions a {
+    padding: 12px 28px; border-radius: 12px;
+    font-size: 14px; font-weight: 600;
+    font-family: 'Poppins', sans-serif;
+    text-decoration: none; cursor: pointer; transition: all 0.2s;
+  }
+  .btn-post { background: #111; color: #fff; border: none; }
+  .btn-post:hover { background: #333; }
+  .btn-back { background: #f0f0f0; color: #555; border: 1px solid #ddd; }
+  .btn-back:hover { background: #e0e0e0; color: #111; }
+
+  /* Override base.html global rules */
+  body:not(.auth-page):not(.messaging-mode) .create-form textarea {
+    color: #111 !important;
+  }
+  body:not(.auth-page):not(.messaging-mode) .btn-back {
+    color: #555 !important;
+  }
+  body:not(.auth-page):not(.messaging-mode) .btn-post {
+    color: #fff !important;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="create-page">
+  <h1>Create Your Post</h1>
+  <form method="POST" action="/create-post" class="create-form">
+    <textarea name="text" placeholder="What's on your mind?" required></textarea>
+    <div class="create-actions">
+      <button type="submit" class="btn-post">Post</button>
+      <a href="/home" class="btn-back">Back</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

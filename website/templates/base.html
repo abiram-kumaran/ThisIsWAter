@@ -1,0 +1,1526 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+    crossorigin="anonymous">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet" />
+  <link href="{{ url_for('static', filename='effects/effects.css') }}" rel="stylesheet" />
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://kit.fontawesome.com/999ca2bb93.js" crossorigin="anonymous"></script>
+  <title>{% block title %}{% endblock %} — G~Hues</title>
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --nav-w: clamp(72px, 6vw, 88px);
+      --dm-w: clamp(60px, 5.5vw, 76px);
+      --ease-smooth: cubic-bezier(0.22, 1, 0.36, 1);
+      --ease-dm: cubic-bezier(0.65, 0, 0.35, 1);
+    }
+
+    html {
+      font-size: clamp(14px, 1.5vw, 16px);
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: transparent;
+      color: #111;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* White + bold text on all authenticated pages (not auth, not DM) */
+    body:not(.auth-page):not(.messaging-mode) h1,
+    body:not(.auth-page):not(.messaging-mode) h2,
+    body:not(.auth-page):not(.messaging-mode) h3,
+    body:not(.auth-page):not(.messaging-mode) h4,
+    body:not(.auth-page):not(.messaging-mode) h5,
+    body:not(.auth-page):not(.messaging-mode) h6,
+    body:not(.auth-page):not(.messaging-mode) p,
+    body:not(.auth-page):not(.messaging-mode) span,
+    body:not(.auth-page):not(.messaging-mode) a,
+    body:not(.auth-page):not(.messaging-mode) label,
+    body:not(.auth-page):not(.messaging-mode) li,
+    body:not(.auth-page):not(.messaging-mode) td,
+    body:not(.auth-page):not(.messaging-mode) th,
+    body:not(.auth-page):not(.messaging-mode) div,
+    body:not(.auth-page):not(.messaging-mode) nav,
+    body:not(.auth-page):not(.messaging-mode) button,
+    body:not(.auth-page):not(.messaging-mode) .btn {
+      color: #ffffff !important;
+      font-weight: 700 !important;
+    }
+
+    /* Restore button/input borders and backgrounds — don't over-style */
+    body:not(.auth-page):not(.messaging-mode) input,
+    body:not(.auth-page):not(.messaging-mode) textarea {
+      color: #ffffff !important;
+      font-weight: 600 !important;
+    }
+
+    body.messaging-mode {
+      overflow: hidden;
+    }
+
+    body.auth-page {
+      background: transparent;
+    }
+
+    .alert {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      z-index: 10001;
+      min-width: min(300px, 90vw);
+      border-radius: 12px;
+      font-size: 14px;
+      border: none;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    .alert-success {
+      background: #fff;
+      color: #333;
+      border-left: 4px solid #111;
+    }
+
+    .alert-danger {
+      background: #fff;
+      color: #c0392b;
+      border-left: 4px solid #c0392b;
+    }
+
+    /* ── DM BLACK BAR ── */
+    .dm-backdrop {
+      position: fixed;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: var(--dm-w);
+      background: #000;
+      z-index: 1000;
+      cursor: pointer;
+      border-top-left-radius: 24px;
+      border-bottom-left-radius: 24px;
+      transition: none;
+      box-shadow: -4px 0 24px rgba(0, 0, 0, 0.15);
+    }
+
+    .dm-backdrop:hover {
+      box-shadow: -6px 0 32px rgba(0, 0, 0, 0.25);
+    }
+
+    body.messaging-mode .dm-backdrop {
+      width: 100%;
+      border-radius: 0;
+      box-shadow: none;
+    }
+
+
+    .dm-rail {
+      position: fixed;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: var(--dm-w);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: clamp(14px, 2vh, 22px) 0;
+      gap: clamp(8px, 1.2vh, 12px);
+      z-index: 1003;
+      overflow-y: auto;
+      scrollbar-width: none;
+      cursor: pointer;
+      border-top-left-radius: 24px;
+      border-bottom-left-radius: 24px;
+    }
+
+    .dm-rail::-webkit-scrollbar {
+      display: none;
+    }
+
+    .dm-rail-label {
+      font-size: 9px;
+      color: rgba(255, 255, 255, 0.35);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      font-weight: 600;
+      flex-shrink: 0;
+      pointer-events: none;
+    }
+
+    .dm-rail-divider {
+      width: 28px;
+      height: 1px;
+      background: rgba(255, 255, 255, 0.12);
+      flex-shrink: 0;
+      pointer-events: none;
+    }
+
+    .dm-rail-avatar {
+      width: clamp(38px, 4vw, 44px);
+      height: clamp(38px, 4vw, 44px);
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.12);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: clamp(14px, 1.8vw, 16px);
+      font-weight: 700;
+      color: #fff;
+      cursor: pointer;
+      transition: all 0.35s var(--ease-smooth);
+      border: 2px solid transparent;
+      flex-shrink: 0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .dm-rail-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: inherit;
+    }
+
+    .dm-rail-avatar:hover {
+      border-color: rgba(255, 255, 255, 0.6);
+      transform: scale(1.08);
+      border-radius: 16px;
+    }
+
+    .dm-rail-avatar.active {
+      border-color: #fff;
+      border-radius: 16px;
+      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
+    }
+
+    .dm-rail-avatar .rail-tip {
+      position: absolute;
+      right: calc(100% + 10px);
+      background: #fff;
+      color: #111;
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 8px;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+      z-index: 100;
+    }
+
+    .dm-rail-avatar:hover .rail-tip {
+      opacity: 1;
+    }
+
+    /* ── FULL-PAGE MESSAGING ── */
+    #dmFullPage {
+      position: fixed;
+      inset: 0;
+      z-index: 1001;
+      display: flex;
+      opacity: 0;
+      pointer-events: none;
+      transform: none;
+      transition: none;
+      padding-left: var(--nav-w);
+      padding-right: var(--dm-w);
+    }
+
+    body.messaging-mode #dmFullPage {
+      opacity: 1;
+      pointer-events: auto;
+      transform: none;
+    }
+
+    .dm-layout {
+      display: flex;
+      flex: 1;
+      min-height: 0;
+      width: 100%;
+      background: #000;
+    }
+
+    .dm-sidebar {
+      width: min(280px, 35vw);
+      border-right: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      transform: none;
+      opacity: 1;
+      transition: none;
+    }
+
+    body.messaging-mode .dm-sidebar {
+      transform: translateX(0);
+      opacity: 1;
+    }
+
+    .dm-sidebar-header {
+      padding: 20px 16px 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .dm-sidebar-header h2 {
+      font-size: 18px;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 12px;
+    }
+
+    .dm-add-friend-btn {
+      width: 100%;
+      padding: 10px 14px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 12px;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: 'Poppins', sans-serif;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .dm-add-friend-btn:hover {
+      background: rgba(255, 255, 255, 0.18);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .dm-add-friend-form {
+      display: none;
+      margin-top: 10px;
+      gap: 6px;
+    }
+
+    .dm-add-friend-form.open {
+      display: flex;
+    }
+
+    .dm-add-friend-form input {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 10px;
+      color: #fff;
+      padding: 8px 10px;
+      font-size: 12px;
+      font-family: 'Poppins', sans-serif;
+      outline: none;
+    }
+
+    .dm-add-friend-form button {
+      background: #fff;
+      color: #111;
+      border: none;
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .dm-user-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+    }
+
+    .dm-user-list::-webkit-scrollbar {
+      width: 3px;
+    }
+
+    .dm-user-list::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .dm-user-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+      margin-bottom: 4px;
+    }
+
+    .dm-user-item:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .dm-user-item.active {
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .dm-user-item-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .dm-user-item-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .dm-user-item-name {
+      font-size: 14px;
+      font-weight: 500;
+      color: #fff;
+    }
+
+    .dm-chat-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      transform: none;
+      opacity: 1;
+      transition: none;
+    }
+
+    .dm-full-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: clamp(16px, 3vh, 24px) clamp(20px, 4vw, 28px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      flex-shrink: 0;
+    }
+
+    .dm-full-header-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .dm-full-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.12);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+      overflow: hidden;
+    }
+
+    .dm-full-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .dm-full-name {
+      font-size: clamp(16px, 2.5vw, 20px);
+      font-weight: 600;
+      color: #fff;
+    }
+
+    .dm-full-status {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.4);
+      margin-top: 2px;
+    }
+
+    .dm-full-close {
+      background: rgba(255, 255, 255, 0.08);
+      border: none;
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 16px;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: all 0.25s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .dm-full-close:hover {
+      background: rgba(255, 255, 255, 0.15);
+      color: #fff;
+    }
+
+    .dm-full-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: clamp(16px, 3vh, 28px) clamp(20px, 4vw, 28px);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-height: 0;
+    }
+
+    .dm-full-messages::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .dm-full-messages::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 2px;
+    }
+
+    .dm-empty {
+      text-align: center;
+      color: rgba(255, 255, 255, 0.3);
+      font-size: 13px;
+      margin: auto;
+      padding: 40px 20px;
+    }
+
+    .dm-empty i {
+      font-size: 36px;
+      display: block;
+      margin-bottom: 12px;
+      opacity: 0.5;
+    }
+
+    .dm-bubble {
+      max-width: min(75%, 480px);
+      padding: 10px 14px;
+      border-radius: 16px;
+      font-size: clamp(13px, 1.6vw, 14px);
+      line-height: 1.5;
+      word-break: break-word;
+      animation: bubbleIn 0.35s var(--ease-smooth);
+    }
+
+    @keyframes bubbleIn {
+      from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.97);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .dm-bubble.me {
+      background: #fff;
+      color: #111;
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+    }
+
+    .dm-bubble.them {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+      align-self: flex-start;
+      border-bottom-left-radius: 4px;
+    }
+
+    .dm-bubble-time {
+      font-size: 10px;
+      opacity: 0.45;
+      margin-top: 4px;
+      display: block;
+    }
+
+    .dm-full-input-row {
+      display: flex;
+      gap: 10px;
+      padding: clamp(14px, 2.5vh, 20px) clamp(20px, 4vw, 28px);
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      flex-shrink: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .dm-full-input-row.hidden {
+      opacity: 0.3;
+      pointer-events: none;
+    }
+
+    .dm-full-input-row input {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 14px;
+      color: #fff;
+      padding: 12px 16px;
+      font-size: 14px;
+      font-family: 'Poppins', sans-serif;
+      outline: none;
+      transition: border-color 0.25s, background 0.25s;
+    }
+
+    .dm-full-input-row input:focus {
+      border-color: rgba(255, 255, 255, 0.3);
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .dm-full-input-row input::placeholder {
+      color: rgba(255, 255, 255, 0.3);
+    }
+
+    .dm-full-input-row button {
+      background: #fff;
+      border: none;
+      border-radius: 14px;
+      color: #111;
+      width: 48px;
+      height: 48px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: transform 0.2s;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .dm-full-input-row button:hover {
+      transform: scale(1.05);
+    }
+
+    .dm-full-input-row button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* ── MAIN CONTENT ── */
+    .main-content {
+      position: relative;
+      z-index: 1;
+      margin-left: var(--nav-w);
+      margin-right: var(--dm-w);
+      padding: clamp(20px, 4vw, 32px) clamp(12px, 3vw, 20px) clamp(80px, 12vh, 120px);
+      min-height: 100vh;
+      transition: none;
+    }
+
+    body.messaging-mode .main-content {
+      opacity: 0;
+      pointer-events: none;
+      transform: none;
+      filter: none;
+    }
+
+    body.auth-page .main-content {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+    }
+
+    body.page-transition .main-content {
+      animation: pageShift 0.45s var(--ease-smooth);
+    }
+
+    @keyframes pageShift {
+      0% {
+        opacity: 0.6;
+        transform: translateY(8px);
+      }
+
+      100% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* ── SEARCH PANEL ── */
+    #searchPanel {
+      position: fixed;
+      left: calc(var(--nav-w) + 12px);
+      top: 50%;
+      transform: translateY(-50%) scale(0.95);
+      opacity: 0;
+      pointer-events: none;
+      width: min(340px, calc(100vw - var(--nav-w) - var(--dm-w) - 32px));
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(16px);
+      border-radius: 18px;
+      box-shadow: 0 8px 40px rgba(0, 0, 0, 0.12);
+      z-index: 999;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      max-height: min(520px, 80vh);
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      transition: opacity 0.35s var(--ease-smooth), transform 0.4s var(--ease-smooth);
+    }
+
+    #searchPanel.open {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(-50%) scale(1);
+    }
+
+    .search-panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .search-panel-header span {
+      font-size: 14px;
+      font-weight: 600;
+      color: #111;
+    }
+
+    .search-panel-close {
+      background: none;
+      border: none;
+      color: #bbb;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .search-input-row {
+      display: flex;
+      gap: 8px;
+      padding: 12px 14px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .search-input-row input {
+      flex: 1;
+      background: #f5f5f5;
+      border: 1px solid #e8e8e8;
+      border-radius: 10px;
+      padding: 9px 12px;
+      font-size: 13px;
+      font-family: 'Poppins', sans-serif;
+      outline: none;
+    }
+
+    .search-input-row button {
+      background: #111;
+      border: none;
+      border-radius: 10px;
+      color: #fff;
+      padding: 9px 14px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .search-results {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px;
+    }
+
+    .search-empty {
+      text-align: center;
+      color: #ccc !important;
+      font-size: 12px;
+      padding: 30px 10px;
+    }
+
+    .search-empty i {
+      font-size: 28px;
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    .search-profile-card {
+      text-align: center;
+    }
+
+    .search-profile-avatar {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: #111;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      font-weight: 700;
+      color: #fff;
+      margin: 0 auto 12px;
+    }
+
+    .search-profile-card h3 {
+      font-size: 18px;
+      font-weight: 700;
+      color: #111 !important;
+      margin-bottom: 6px;
+    }
+
+    .search-profile-bio {
+      font-size: 13px;
+      color: #666 !important;
+      line-height: 1.5;
+      margin-bottom: 14px;
+    }
+
+    .search-profile-meta {
+      font-size: 12px;
+      color: #aaa !important;
+      margin-bottom: 14px;
+    }
+
+    .friend-btn {
+      background: #111;
+      color: #fff !important;
+      border: none;
+      border-radius: 10px;
+      padding: 9px 20px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-bottom: 16px;
+    }
+
+    .friend-btn:disabled {
+      background: #e8e8e8;
+      color: #999 !important;
+      cursor: not-allowed;
+    }
+
+    .search-posts-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: #aaa !important;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      text-align: left;
+      margin-bottom: 8px;
+    }
+
+    .search-post-item {
+      background: #f9f9f9;
+      border: 1px solid #f0f0f0;
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+      text-align: left;
+      font-size: 13px;
+      color: #333 !important;
+    }
+
+    .search-post-date {
+      font-size: 11px;
+      color: #bbb !important;
+      margin-top: 4px;
+    }
+
+    .search-error {
+      color: #c0392b !important;
+      font-size: 13px;
+      text-align: center;
+      padding: 20px 10px;
+    }
+
+    /* ── Suggested users ── */
+    .suggestions-section {
+      padding: 6px 0 4px;
+    }
+
+    .suggestions-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: #aaa !important;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      padding: 0 2px 10px;
+    }
+
+    .suggestion-card {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 10px;
+      border-radius: 12px;
+      margin-bottom: 6px;
+      background: #f9f9f9;
+      border: 1px solid #f0f0f0;
+      transition: background 0.18s ease;
+      cursor: default;
+    }
+
+    .suggestion-card:hover {
+      background: #f0f0f0;
+    }
+
+    .suggestion-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #111;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff !important;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+
+    .suggestion-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .suggestion-name {
+      flex: 1;
+      font-size: 14px;
+      font-weight: 600;
+      color: #111 !important;
+    }
+
+    .suggestion-add-btn {
+      background: #111;
+      color: #fff !important;
+      border: none;
+      border-radius: 8px;
+      padding: 5px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.18s ease;
+      font-family: 'Poppins', sans-serif;
+      white-space: nowrap;
+    }
+
+    .suggestion-add-btn:hover {
+      background: #333;
+    }
+
+    .suggestion-add-btn:disabled {
+      background: #ccc;
+      color: #888 !important;
+      cursor: default;
+    }
+
+    @media (max-width: 640px) {
+      :root {
+        --nav-w: 64px;
+        --dm-w: 56px;
+      }
+
+      .dm-rail-label {
+        display: none;
+      }
+
+      .dm-rail-avatar .rail-tip {
+        display: none;
+      }
+
+      .dm-sidebar {
+        width: min(220px, 45vw);
+      }
+
+      #searchPanel {
+        left: var(--nav-w);
+        right: var(--dm-w);
+        width: auto;
+        transform: none;
+        top: auto;
+        bottom: 80px;
+        max-height: 50vh;
+      }
+
+      #searchPanel.open {
+        transform: none;
+      }
+    }
+
+    /* Fix text colors for dropdowns and search panel */
+    body:not(.auth-page):not(.messaging-mode) .dropdown-menu,
+    body:not(.auth-page):not(.messaging-mode) .dropdown-menu *,
+    body:not(.auth-page):not(.messaging-mode) .dropdown-item,
+    body:not(.auth-page):not(.messaging-mode) .dropdown-item i,
+    body:not(.auth-page):not(.messaging-mode) .dropdown-toggle,
+    body:not(.auth-page):not(.messaging-mode) .btn.dropdown-toggle {
+      color: #111111 !important;
+    }
+
+    body:not(.auth-page):not(.messaging-mode) #searchPanel,
+    body:not(.auth-page):not(.messaging-mode) #searchPanel * {
+      color: #111111 !important;
+    }
+
+    /* Fix search and comment buttons (make their icons white on black bg) */
+    body:not(.auth-page):not(.messaging-mode) #searchPanel .search-input-row button,
+    body:not(.auth-page):not(.messaging-mode) #searchPanel .search-input-row button i,
+    body:not(.auth-page):not(.messaging-mode) .card .comment-form button,
+    body:not(.auth-page):not(.messaging-mode) .card .comment-form button i {
+      color: #ffffff !important;
+    }
+
+    /* Fix avatar initials (white text on black circle) */
+    body:not(.auth-page):not(.messaging-mode) .card .user-avatar-sm,
+    body:not(.auth-page):not(.messaging-mode) #searchPanel .search-profile-avatar {
+      color: #ffffff !important;
+    }
+  </style>
+  {% block extra_styles %}{% endblock %}
+</head>
+
+<body class="{% block body_class %}{% if not current_user.is_authenticated %}auth-page{% endif %}{% endblock %}">
+
+  <!-- Grainient animated background for authenticated pages -->
+  <div id="pageBgRoot" class="page-bg-container"></div>
+
+  <div id="dotFieldRoot" class="dot-field-container"></div>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  {% for category, message in messages %}
+  <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show"
+    role="alert">
+    {{ message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+  {% endfor %}
+  {% endif %}
+  {% endwith %}
+
+  {% if current_user.is_authenticated %}
+  <!-- DOCK NAV -->
+  <div class="dock-nav-wrap">
+    <div class="dock-panel" id="dockPanel">
+      <a href="/home" class="dock-item {% block nav_home %}{% endblock %}" aria-label="Home">
+        <span class="dock-icon"><i class="fas fa-home"></i></span>
+        <span class="dock-label">Home</span>
+      </a>
+      <div class="dock-divider"></div>
+      <a href="#" class="dock-item {% block nav_search %}{% endblock %}" id="searchNavBtn" aria-label="Search">
+        <span class="dock-icon"><i class="fas fa-search"></i></span>
+        <span class="dock-label">Search</span>
+      </a>
+
+      <div class="dock-divider"></div>
+      <a href="/posts/{{ current_user.username }}"
+        class="dock-item nav-profile-link {% block nav_profile %}{% endblock %}" aria-label="Profile">
+        <span class="dock-icon">
+          <div class="nav-profile-avatar">
+            {% if current_user.profile_pic %}
+            <img src="{{ url_for('static', filename=current_user.profile_pic) }}" alt="">
+            {% else %}
+            {{ current_user.username[0] | upper }}
+            {% endif %}
+          </div>
+        </span>
+        <span class="dock-label">Profile</span>
+      </a>
+    </div>
+  </div>
+
+  <div id="searchPanel">
+    <div class="search-panel-header">
+      <span><i class="fas fa-search" style="margin-right:6px;"></i>Search Users</span>
+      <button class="search-panel-close" onclick="closeSearchPanel()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="search-input-row">
+      <input type="text" id="searchInput" placeholder="Search by username..." maxlength="150" />
+      <button onclick="searchUser()"><i class="fas fa-search"></i></button>
+    </div>
+    <div class="search-results" id="searchResults">
+      <div class="search-empty" id="searchDefaultState"><i class="fas fa-spinner fa-spin"></i>Loading suggestions...
+      </div>
+    </div>
+  </div>
+
+  <div class="dm-backdrop" id="dmBackdrop" onclick="openDMHub(event)"></div>
+
+  <div class="dm-rail" id="dmRail" onclick="openDMHub(event)">
+    <div class="dm-rail-label">DMs</div>
+    <div class="dm-rail-divider"></div>
+    {% for u in all_users %}
+    <div class="dm-rail-avatar" id="dm-rail-{{ u.username }}" data-username="{{ u.username }}"
+      data-pic="{{ url_for('static', filename=u.profile_pic) if u.profile_pic else '' }}"
+      onclick="openDMChat('{{ u.username }}', event)">
+      {% if u.profile_pic %}
+      <img src="{{ url_for('static', filename=u.profile_pic) }}" alt="">
+      {% else %}
+      {{ u.username[0] | upper }}
+      {% endif %}
+      <span class="rail-tip">{{ u.username }}</span>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div id="dmEffectsRoot"></div>
+
+  <div id="dmFullPage">
+    <div class="dm-layout">
+      <aside class="dm-sidebar">
+        <div class="dm-sidebar-header">
+          <h2>Messages</h2>
+          <button class="dm-add-friend-btn" onclick="toggleAddFriendForm(event)">
+            <i class="fas fa-user-plus"></i> Add New Friend
+          </button>
+          <div class="dm-add-friend-form" id="dmAddFriendForm">
+            <input type="text" id="dmFriendSearch" placeholder="Username..." maxlength="150" />
+            <button onclick="dmSearchAndAddFriend()"><i class="fas fa-search"></i></button>
+          </div>
+          <div id="dmFriendResult" style="margin-top:8px;font-size:12px;color:rgba(255,255,255,0.5);"></div>
+        </div>
+        <div class="dm-user-list" id="dmUserList">
+          {% for u in all_users %}
+          <div class="dm-user-item" id="dm-user-{{ u.username }}" data-username="{{ u.username }}"
+            data-pic="{{ url_for('static', filename=u.profile_pic) if u.profile_pic else '' }}"
+            onclick="openDMChat('{{ u.username }}', event)">
+            <div class="dm-user-item-avatar">
+              {% if u.profile_pic %}
+              <img src="{{ url_for('static', filename=u.profile_pic) }}" alt="">
+              {% else %}
+              {{ u.username[0] | upper }}
+              {% endif %}
+            </div>
+            <span class="dm-user-item-name">{{ u.username }}</span>
+          </div>
+          {% endfor %}
+        </div>
+      </aside>
+
+      <div class="dm-chat-area">
+        <div class="dm-full-header">
+          <div class="dm-full-header-left">
+            <div class="dm-full-avatar" id="dmFullAvatar">?</div>
+            <div>
+              <div class="dm-full-name" id="dmFullName">Select a chat</div>
+              <div class="dm-full-status" id="dmFullStatus">Choose someone to message</div>
+            </div>
+          </div>
+          <button class="dm-full-close" onclick="closeDMChat()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="dm-full-messages" id="dmFullMessages">
+          <div class="dm-empty"><i class="far fa-comment-dots"></i>Pick a conversation or add a new friend</div>
+        </div>
+        <div class="dm-full-input-row hidden" id="dmInputRow">
+          <input type="text" id="dmFullInput" placeholder="Type a message..." maxlength="500" />
+          <button onclick="sendDMChat()" id="dmSendBtn"><i class="fas fa-paper-plane"></i></button>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="main-content">
+    {% block content %}{% endblock %}
+  </div>
+
+  <script src="{{ url_for('static', filename='effects/dot-field.js') }}"></script>
+  <script src="{{ url_for('static', filename='effects/page-bg.js') }}"></script>
+  <script src="{{ url_for('static', filename='effects/tv-boot.js') }}"></script>
+  <script src="{{ url_for('static', filename='effects/dm-effects.js') }}"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+    crossorigin="anonymous"></script>
+  <script>
+    /* ── DotField: only on login/signup (auth-page), disabled elsewhere ── */
+    (function () {
+      const isAuth = document.body.classList.contains('auth-page');
+      const root = document.getElementById('dotFieldRoot');
+      if (!isAuth || !root || typeof DotField === 'undefined') return;
+
+      window.dotField = new DotField(root, {
+        dotRadius: 2.2,
+        dotSpacing: 13,
+        bulgeStrength: 67,
+        glowRadius: 160,
+        theme: 'dark',
+      });
+    })();
+
+    /* ── Grainient page background: authenticated pages only, not DM ── */
+    (function () {
+      const isAuth = document.body.classList.contains('auth-page');
+      if (isAuth) return; // not on login/signup
+      const root = document.getElementById('pageBgRoot');
+      if (!root || typeof PageBackground === 'undefined') return;
+
+      window.pageBg = new PageBackground(root, {
+        color1: '#5c3538',
+        color2: '#ff5252',
+        color3: '#6d3434',
+        timeSpeed: 0.35,
+        grainAmount: 0.08,
+      });
+      window.pageBg.start();
+    })();
+
+
+    /* ── Dock nav ── */
+    (function () {
+      const panel = document.getElementById('dockPanel');
+      const searchBtn = document.getElementById('searchNavBtn');
+      if (searchBtn) {
+        searchBtn.addEventListener('click', function (e) {
+          e.preventDefault();
+          triggerPageTransition();
+          toggleSearchPanel();
+        });
+      }
+      if (panel) {
+        panel.querySelectorAll('a.dock-item[href^="/"]').forEach(function (link) {
+          if (link.id === 'searchNavBtn') return;
+          link.addEventListener('click', function () {
+            // Close DM if open with transition
+            if (document.body.classList.contains('messaging-mode')) {
+              closeDMChat();
+            }
+            triggerPageTransition();
+          });
+        });
+      }
+    })();
+
+    function triggerPageTransition() {
+      document.body.classList.add('page-transition');
+      setTimeout(function () { document.body.classList.remove('page-transition'); }, 500);
+    }
+
+    function triggerDMTransition(cb) {
+      if (cb) cb();
+    }
+
+    {% if current_user.is_authenticated %}
+    window.CURRENT_USER = "{{ current_user.username }}";
+    let activeDMUser = null;
+    let dmPollTimer = null;
+    let lastMsgCount = 0;
+
+    function openDMHub(e) {
+      if (e && e.target.closest('.dm-rail-avatar')) return;
+      if (e) e.stopPropagation();
+      triggerDMTransition(function () {
+        document.body.classList.add('messaging-mode');
+        activeDMUser = null;
+        lastMsgCount = 0;
+        stopDMPolling();
+        document.querySelectorAll('.dm-rail-avatar, .dm-user-item').forEach(function (a) { a.classList.remove('active'); });
+        document.getElementById('dmFullName').textContent = 'Select a chat';
+        document.getElementById('dmFullStatus').textContent = 'Choose someone to message';
+        document.getElementById('dmFullAvatar').innerHTML = '<i class="far fa-comments" style="font-size:20px;opacity:0.5;"></i>';
+        document.getElementById('dmFullMessages').innerHTML = '<div class="dm-empty"><i class="far fa-comment-dots"></i>Pick a conversation or add a new friend</div>';
+        document.getElementById('dmInputRow').classList.add('hidden');
+      });
+    }
+
+    function openDMChat(username, e) {
+      if (e) { e.stopPropagation(); }
+      if (activeDMUser === username && document.body.classList.contains('messaging-mode')) return;
+
+      triggerDMTransition(function () {
+        activeDMUser = username;
+        document.body.classList.add('messaging-mode');
+        document.getElementById('dmFullName').textContent = username;
+        document.getElementById('dmFullStatus').textContent = 'Direct Message';
+        document.getElementById('dmInputRow').classList.remove('hidden');
+
+        var railEl = document.getElementById('dm-rail-' + username);
+        var picUrl = railEl ? railEl.dataset.pic : '';
+        var avatarEl = document.getElementById('dmFullAvatar');
+        avatarEl.innerHTML = picUrl ? '<img src="' + picUrl + '" alt="">' : username[0].toUpperCase();
+
+        document.querySelectorAll('.dm-rail-avatar, .dm-user-item').forEach(function (a) { a.classList.remove('active'); });
+        if (railEl) railEl.classList.add('active');
+        var userItem = document.getElementById('dm-user-' + username);
+        if (userItem) userItem.classList.add('active');
+
+        lastMsgCount = 0;
+        loadMessages(username);
+        startDMPolling();
+
+        var input = document.getElementById('dmFullInput');
+        input.focus();
+        input.onkeydown = function (ev) {
+          if (ev.key === 'Enter' && !ev.shiftKey) { ev.preventDefault(); sendDMChat(); }
+        };
+      });
+    }
+
+    function closeDMChat() {
+      triggerDMTransition(function () {
+        document.body.classList.remove('messaging-mode');
+        document.querySelectorAll('.dm-rail-avatar, .dm-user-item').forEach(function (a) { a.classList.remove('active'); });
+        activeDMUser = null;
+        stopDMPolling();
+      });
+    }
+
+    function toggleAddFriendForm(e) {
+      if (e) e.stopPropagation();
+      document.getElementById('dmAddFriendForm').classList.toggle('open');
+      document.getElementById('dmFriendSearch').focus();
+    }
+
+    function dmSearchAndAddFriend() {
+      var query = document.getElementById('dmFriendSearch').value.trim();
+      var resultEl = document.getElementById('dmFriendResult');
+      if (!query) { resultEl.textContent = 'Enter a username.'; return; }
+      resultEl.textContent = 'Searching...';
+      fetch('/api/search?q=' + encodeURIComponent(query))
+        .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
+        .then(function (res) {
+          if (!res.ok || !res.data.found) {
+            resultEl.textContent = res.data.error || 'User not found.';
+            return;
+          }
+          var u = res.data.user;
+          if (u.friend_status === 'self') { resultEl.textContent = "That's you!"; return; }
+          if (u.friend_status === 'friends') {
+            resultEl.textContent = 'Already friends — opening chat...';
+            openDMChat(u.username);
+            return;
+          }
+          if (u.friend_status === 'pending_sent') { resultEl.textContent = 'Request already sent.'; return; }
+          fetch('/api/friend-request/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: u.id })
+          }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
+            .then(function (r2) {
+              if (!r2.ok) { resultEl.textContent = r2.data.error || 'Could not send request.'; return; }
+              resultEl.textContent = 'Friend request sent to ' + u.username + '!';
+              document.getElementById('dmAddFriendForm').classList.remove('open');
+            });
+        });
+    }
+
+    function loadMessages(username) {
+      fetch('/api/messages/' + encodeURIComponent(username))
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          if (data.error) return;
+          renderMessages(data.messages);
+        });
+    }
+
+    function renderMessages(msgs) {
+      var box = document.getElementById('dmFullMessages');
+      if (!msgs || !msgs.length) {
+        box.innerHTML = '<div class="dm-empty"><i class="far fa-comment-dots"></i>Start a conversation</div>';
+        lastMsgCount = 0;
+        return;
+      }
+      if (msgs.length === lastMsgCount) return;
+      lastMsgCount = msgs.length;
+      box.innerHTML = msgs.map(function (m) {
+        return '<div class="dm-bubble ' + (m.from_me ? 'me' : 'them') + '">' + m.text + '<span class="dm-bubble-time">' + (m.time || '') + '</span></div>';
+      }).join('');
+      box.scrollTop = box.scrollHeight;
+    }
+
+    function sendDMChat() {
+      if (!activeDMUser) return;
+      var input = document.getElementById('dmFullInput');
+      var btn = document.getElementById('dmSendBtn');
+      var text = input.value.trim();
+      if (!text) return;
+
+      // Trigger send animation on the button
+      btn.classList.remove('sending');
+      void btn.offsetWidth; // force reflow so re-triggering works
+      btn.classList.add('sending');
+      btn.addEventListener('animationend', function onEnd() {
+        btn.classList.remove('sending');
+        btn.removeEventListener('animationend', onEnd);
+      });
+
+      btn.disabled = true;
+      fetch('/api/messages/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: activeDMUser, text: text })
+      }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
+        .then(function (res) {
+          btn.disabled = false;
+          if (!res.ok) { alert(res.data.error || 'Failed to send.'); return; }
+          input.value = '';
+          lastMsgCount = 0;
+          loadMessages(activeDMUser);
+        })
+        .catch(function () { btn.disabled = false; });
+    }
+
+    function startDMPolling() {
+      stopDMPolling();
+      dmPollTimer = setInterval(function () {
+        if (activeDMUser) loadMessages(activeDMUser);
+      }, 2500);
+    }
+
+    function stopDMPolling() {
+      if (dmPollTimer) { clearInterval(dmPollTimer); dmPollTimer = null; }
+      lastMsgCount = 0;
+    }
+
+    function toggleSearchPanel() {
+      var panel = document.getElementById('searchPanel');
+      var btn = document.getElementById('searchNavBtn');
+      var opening = !panel.classList.contains('open');
+      if (document.body.classList.contains('messaging-mode')) closeDMChat();
+      panel.classList.toggle('open');
+      btn.classList.toggle('active');
+      if (opening) {
+        document.getElementById('searchInput').focus();
+        loadSuggestions();
+      }
+    }
+
+    function loadSuggestions() {
+      var box = document.getElementById('searchResults');
+      box.innerHTML = '<div class="search-empty"><i class="fas fa-spinner fa-spin"></i>Loading...</div>';
+      fetch('/api/suggestions')
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          var list = data.suggestions || [];
+          if (!list.length) {
+            box.innerHTML = '<div class="search-empty"><i class="fas fa-user-friends"></i>No new people to suggest right now</div>';
+            return;
+          }
+          var html = '<div class="suggestions-section">';
+          html += '<div class="suggestions-title"><i class="fas fa-user-plus" style="margin-right:5px;"></i>People you may know</div>';
+          list.forEach(function (u) {
+            var avatarHtml = u.profile_pic
+              ? '<img src="' + u.profile_pic + '" alt="">'
+              : u.username[0].toUpperCase();
+            html += '<div class="suggestion-card" id="suggestion-' + u.id + '">';
+            html += '<div class="suggestion-avatar">' + avatarHtml + '</div>';
+            html += '<span class="suggestion-name">' + u.username + '</span>';
+            html += '<button class="suggestion-add-btn" id="sugg-btn-' + u.id + '" onclick="sendSuggestionRequest(' + u.id + ', \'' + u.username + '\')">';
+            html += '<i class="fas fa-user-plus" style="margin-right:4px;"></i>Add</button>';
+            html += '</div>';
+          });
+          html += '</div>';
+          box.innerHTML = html;
+        })
+        .catch(function () {
+          box.innerHTML = '<div class="search-empty"><i class="fas fa-user-friends"></i>Find friends by username</div>';
+        });
+    }
+
+    function closeSearchPanel() {
+      document.getElementById('searchPanel').classList.remove('open');
+      document.getElementById('searchNavBtn').classList.remove('active');
+    }
+
+    function searchUser() {
+      var query = document.getElementById('searchInput').value.trim();
+      var box = document.getElementById('searchResults');
+      if (!query) { box.innerHTML = '<div class="search-error">Enter a username to search.</div>'; return; }
+      box.innerHTML = '<div class="search-empty"><i class="fas fa-spinner fa-spin"></i>Searching...</div>';
+      fetch('/api/search?q=' + encodeURIComponent(query))
+        .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
+        .then(function (res) {
+          if (!res.ok || !res.data.found) {
+            box.innerHTML = '<div class="search-error">' + (res.data.error || 'User not found.') + '</div>';
+            return;
+          }
+          var u = res.data.user;
+          var friendBtn = '';
+          if (u.friend_status === 'self') friendBtn = '<button class="friend-btn" disabled>This is you</button>';
+          else if (u.friend_status === 'friends') friendBtn = '<button class="friend-btn" disabled>Friends</button>';
+          else if (u.friend_status === 'pending_sent') friendBtn = '<button class="friend-btn" disabled>Request Sent</button>';
+          else if (u.friend_status === 'pending_received') friendBtn = '<button class="friend-btn" disabled>Respond in notifications</button>';
+          else friendBtn = '<button class="friend-btn" id="friendBtn" onclick="sendFriendRequest(' + u.id + ')"><i class="fas fa-user-plus" style="margin-right:6px;"></i>Friend Request</button>';
+          var postsHtml = u.posts.length
+            ? u.posts.map(function (p) { return '<div class="search-post-item">' + p.text + '<div class="search-post-date">' + p.date + '</div></div>'; }).join('')
+            : '<div class="search-empty" style="padding:12px;">No posts yet</div>';
+          box.innerHTML = '<div class="search-profile-card"><div class="search-profile-avatar">' + u.username[0].toUpperCase() + '</div><h3>' + u.username + '</h3><p class="search-profile-bio">' + u.bio + '</p><p class="search-profile-meta">' + u.post_count + ' post(s)</p>' + friendBtn + '<div class="search-posts-title">Posts</div>' + postsHtml + '</div>';
+        });
+    }
+
+    function sendFriendRequest(userId) {
+      var btn = document.getElementById('friendBtn');
+      btn.disabled = true; btn.textContent = 'Sending...';
+      fetch('/api/friend-request/send', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: userId })
+      }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
+        .then(function (res) {
+          if (!res.ok) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-user-plus"></i> Friend Request'; alert(res.data.error); return; }
+          btn.textContent = 'Request Sent';
+        });
+    }
+
+    function respondFriendRequest(requestId, action) {
+      fetch('/api/friend-request/' + requestId + '/' + action, { method: 'POST' })
+        .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
+        .then(function (res) {
+          if (!res.ok) { alert(res.data.error); return; }
+          var el = document.getElementById('friend-req-' + requestId);
+          if (el) el.remove();
+          var box = document.getElementById('friendRequestsBox');
+          if (box && !box.querySelector('.friend-request-item')) box.remove();
+        });
+    }
+
+    function sendSuggestionRequest(userId, username) {
+      var btn = document.getElementById('sugg-btn-' + userId);
+      if (!btn || btn.disabled) return;
+      btn.disabled = true;
+      btn.innerHTML = 'Sending...';
+      fetch('/api/friend-request/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: userId })
+      }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
+        .then(function (res) {
+          if (!res.ok) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-user-plus" style="margin-right:4px;"></i>Add';
+            alert(res.data.error || 'Could not send request.');
+            return;
+          }
+          btn.innerHTML = '<i class="fas fa-check" style="margin-right:4px;"></i>Sent!';
+          btn.style.background = '#444';
+        });
+    }
+
+    document.getElementById('searchInput')?.addEventListener('keydown', function (e) { if (e.key === 'Enter') searchUser(); });
+    document.getElementById('dmFriendSearch')?.addEventListener('keydown', function (e) { if (e.key === 'Enter') dmSearchAndAddFriend(); });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && document.body.classList.contains('messaging-mode')) closeDMChat();
+    });
+    {% endif %}
+
+    setTimeout(function () {
+      document.querySelectorAll('.alert').forEach(function (a) {
+        try { new bootstrap.Alert(a).close(); } catch (e) { }
+      });
+    }, 3000);
+  </script>
+  {% block extra_scripts %}{% endblock %}
+</body>
+
+</html>
