@@ -5,6 +5,7 @@ from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_mail import Message
 import random
+import time
 
 auth = Blueprint("auth", __name__)
 
@@ -41,15 +42,16 @@ def send_otp():
     # Generate a random 4-digit OTP
     otp = str(random.randint(1000, 9999))
     
-    # Store the OTP and the email in the current session
+    # Store the OTP, email, and timestamp in the current session
     session['otp'] = otp
-    session['otp_email'] = email 
+    session['otp_email'] = email
+    session['otp_created_at'] = time.time()
 
     # Create and send the email
-    msg = Message('Your G~Hues Verification Code', 
+    msg = Message('Your This is WAter. Verification Code', 
                   sender='abiram.yeager18@gmail.com', # Updated to your sender email
                   recipients=[email])
-    msg.body = f'Welcome to G~Hues! Your OTP for sign up is: {otp}'
+    msg.body = f'Welcome to This is WAter.! Your OTP for sign up is: {otp}'
 
     try:
         mail.send(msg)
@@ -74,13 +76,15 @@ def register():
         # Fetch the real OTP and email from the session
         stored_otp = session.get('otp')
         stored_email = session.get('otp_email')
+        otp_created_at = session.get('otp_created_at', 0)
+        otp_expired = (time.time() - otp_created_at) > 600  # 10-minute window
 
         # Validation checks
         email_exists = User.query.filter_by(email=email).first()
-        username_exists = User.query.filter_by(username=username).first() # New check for username
+        username_exists = User.query.filter_by(username=username).first()
 
-        if not stored_otp or user_otp != stored_otp:
-            flash('Invalid or expired OTP. Please try again.', category='error')
+        if not stored_otp or user_otp != stored_otp or otp_expired:
+            flash('Invalid or expired OTP. Please request a new one.', category='error')
         elif email != stored_email:
             flash('Email does not match the one verified.', category='error')
         elif email_exists:
@@ -108,6 +112,7 @@ def register():
             # Clear the OTP from session to prevent reuse
             session.pop('otp', None)
             session.pop('otp_email', None)
+            session.pop('otp_created_at', None)
 
             login_user(new_user, remember=True)
             flash('Account created successfully! Welcome!', category='success')

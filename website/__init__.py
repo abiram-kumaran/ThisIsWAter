@@ -1,3 +1,4 @@
+
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
@@ -34,6 +35,14 @@ def create_database(app):
                 db.session.commit()
                 print("Added profile_pic column to user table")
 
+        if 'message' in inspector.get_table_names():
+            msg_columns = {col['name'] for col in inspector.get_columns('message')}
+            if 'image_path' not in msg_columns:
+                db.session.execute(text("ALTER TABLE message ADD COLUMN image_path VARCHAR(300) DEFAULT ''"))
+                db.session.commit()
+                print("Added image_path column to message table")
+
+
 def create_app():
     app = Flask(__name__)
     app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL", f"sqlite:///{DB_NAME}")
@@ -49,7 +58,7 @@ def create_app():
 
     # Bind extensions to the app
     db.init_app(app)
-    mail.init_app(app)  # <-- NEW: Bind mail to the app
+    mail.init_app(app)
 
     # Import models
     from . import models
@@ -61,8 +70,10 @@ def create_app():
     # Register blueprints
     from .views import views
     from .auth import auth
+    from .admin import admin
     app.register_blueprint(views, url_prefix="/")
     app.register_blueprint(auth, url_prefix="/")
+    app.register_blueprint(admin)
 
     # Initialize Login Manager
     login_manager = LoginManager()
@@ -85,31 +96,29 @@ def create_app():
         from flask_login import current_user
         from .models import User as UserModel
         if current_user.is_authenticated:
-            # Find all accepted friend requests involving the current user
             from .models import FriendRequest
             accepted_reqs = FriendRequest.query.filter(
-                ((FriendRequest.sender_id == current_user.id) | (FriendRequest.receiver_id == current_user.id)) & 
+                ((FriendRequest.sender_id == current_user.id) | (FriendRequest.receiver_id == current_user.id)) &
                 (FriendRequest.status == 'accepted')
             ).all()
-            
+
             friend_ids = []
             for req in accepted_reqs:
                 friend_ids.append(req.receiver_id if req.sender_id == current_user.id else req.sender_id)
-            
+
             friends = UserModel.query.filter(UserModel.id.in_(friend_ids)).order_by(UserModel.username).all() if friend_ids else []
-            
-            # Query suggested users: not current user, not already friends, and no pending requests
+
             all_reqs = FriendRequest.query.filter(
                 (FriendRequest.sender_id == current_user.id) | (FriendRequest.receiver_id == current_user.id)
             ).all()
-            
+
             exclude_ids = {current_user.id}
             for r in all_reqs:
                 exclude_ids.add(r.sender_id)
                 exclude_ids.add(r.receiver_id)
-                
-            suggestions = UserModel.query.filter(~UserModel.id.in_(exclude_ids)).order_by(UserModel.username).limit(5).all()
-            
+
+            suggestions = UserModel.query.filter(~UserModel.id.in_(exclude_ids)).order_by(UserModel.username).limit(4).all()
+
             return {
                 'all_users': friends,
                 'suggested_users': suggestions

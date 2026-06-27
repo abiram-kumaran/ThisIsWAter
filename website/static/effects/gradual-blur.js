@@ -1,135 +1,141 @@
 /**
- * GradualBlur — vanilla JS port of the React Bits component.
- * No dependencies required.
+ * GradualBlurScroll — scroll-driven edge blur overlays.
  *
- * Usage:
- *   new GradualBlur(parentElement, options)
+ * Fixed at top/bottom of viewport. Uses stacked backdrop-filter layers
+ * with CSS mask-image to create a smooth blur gradient.
  *
- * Or auto-init via data attributes:
- *   <div data-gradual-blur="bottom" data-blur-height="6rem" data-blur-strength="2"> ... </div>
+ * Key fixes vs original port:
+ *  - mask uses white (visible) not black (hidden)
+ *  - outer wrapper has NO overflow:hidden so backdrop-filter isn't clipped
+ *  - bottom overlay is always visible (opacity 1) immediately, no fade-in delay
+ *  - top overlay fades in after scrolling 80px
  */
-
 (function () {
   'use strict';
 
-  /* ── curve functions (matches React source exactly) ── */
-  var CURVE_FUNCTIONS = {
-    linear:       function (p) { return p; },
-    bezier:       function (p) { return p * p * (3 - 2 * p); },
-    'ease-in':    function (p) { return p * p; },
-    'ease-out':   function (p) { return 1 - Math.pow(1 - p, 2); },
-    'ease-in-out':function (p) { return p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2; }
+  var CURVE_FN = {
+    linear:        function (p) { return p; },
+    bezier:        function (p) { return p * p * (3 - 2 * p); },
+    'ease-in':     function (p) { return p * p; },
+    'ease-out':    function (p) { return 1 - Math.pow(1 - p, 2); },
+    'ease-in-out': function (p) { return p < 0.5 ? 2*p*p : 1 - Math.pow(-2*p+2,2)/2; }
   };
 
-  var DIRECTION_MAP = {
-    top: 'to top', bottom: 'to bottom',
-    left: 'to left', right: 'to right'
-  };
+  function buildLayers(position, strength, divCount, exponential, curve) {
+    var increment = 100 / divCount;
+    var fn = CURVE_FN[curve] || CURVE_FN.bezier;
+    // gradient direction: for bottom overlay we want blur at the bottom edge,
+    // so the mask reveals (white) toward the edge and hides (transparent) toward content
+    // position='bottom' → blur near bottom → mask direction 'to top' so bottom=visible
+    var dir = position === 'bottom' ? 'to top' : 'to bottom';
+    var frag = document.createDocumentFragment();
 
-  function GradualBlur(container, opts) {
-    var o = Object.assign({
-      position:    'bottom',
-      strength:    2,
-      height:      '6rem',
-      width:       null,
-      divCount:    5,
-      exponential: false,
-      curve:       'linear',
-      opacity:     1,
-      zIndex:      1000,
-    }, opts || {});
+    for (var i = 1; i <= divCount; i++) {
+      var progress = fn(i / divCount);
+      var blurVal = exponential
+        ? Math.pow(2, progress * 4) * 0.0625 * strength
+        : 0.0625 * (progress * divCount + 1) * strength;
 
-    /* outer wrapper */
-    var wrap = document.createElement('div');
-    wrap.className = 'gradual-blur gradual-blur-parent';
+      var p1 = +((increment * i - increment)).toFixed(1);
+      var p2 = +((increment * i)).toFixed(1);
+      var p3 = +((increment * i + increment)).toFixed(1);
+      var p4 = +((increment * i + increment * 2)).toFixed(1);
 
-    var isVertical   = o.position === 'top'  || o.position === 'bottom';
-    var isHorizontal = o.position === 'left' || o.position === 'right';
-
-    wrap.style.cssText = [
-      'position:absolute',
-      'pointer-events:none',
-      'z-index:' + o.zIndex,
-      isVertical   ? ('height:' + o.height)          : ('height:100%'),
-      isVertical   ? ('width:'  + (o.width || '100%')): ('width:' + (o.width || o.height)),
-      o.position + ':0',
-      isVertical   ? 'left:0;right:0' : 'top:0;bottom:0',
-    ].join(';') + ';';
-
-    /* inner */
-    var inner = document.createElement('div');
-    inner.className = 'gradual-blur-inner';
-    inner.style.cssText = 'position:relative;width:100%;height:100%;';
-
-    /* build blur layers */
-    var increment = 100 / o.divCount;
-    var curveFunc  = CURVE_FUNCTIONS[o.curve] || CURVE_FUNCTIONS.linear;
-    var direction  = DIRECTION_MAP[o.position] || 'to bottom';
-
-    for (var i = 1; i <= o.divCount; i++) {
-      var progress = curveFunc(i / o.divCount);
-
-      var blurValue;
-      if (o.exponential) {
-        blurValue = Math.pow(2, progress * 4) * 0.0625 * o.strength;
-      } else {
-        blurValue = 0.0625 * (progress * o.divCount + 1) * o.strength;
-      }
-
-      var p1 = Math.round((increment * i - increment) * 10) / 10;
-      var p2 = Math.round( increment * i              * 10) / 10;
-      var p3 = Math.round((increment * i + increment) * 10) / 10;
-      var p4 = Math.round((increment * i + increment * 2) * 10) / 10;
-
-      var gradient = 'transparent ' + p1 + '%, black ' + p2 + '%';
-      if (p3 <= 100) gradient += ', black ' + p3 + '%';
+      // white = show the blur, transparent = hide it
+      var gradient = 'transparent ' + p1 + '%, white ' + p2 + '%';
+      if (p3 <= 100) gradient += ', white ' + p3 + '%';
       if (p4 <= 100) gradient += ', transparent ' + p4 + '%';
 
-      var maskValue = 'linear-gradient(' + direction + ', ' + gradient + ')';
-      var blurStr   = blurValue.toFixed(3) + 'rem';
+      var mask  = 'linear-gradient(' + dir + ', ' + gradient + ')';
+      var blur  = blurVal.toFixed(3) + 'rem';
 
       var layer = document.createElement('div');
-      layer.style.cssText = [
-        'position:absolute',
-        'inset:0',
-        '-webkit-mask-image:'    + maskValue,
-        'mask-image:'            + maskValue,
-        '-webkit-backdrop-filter:blur(' + blurStr + ')',
-        'backdrop-filter:blur('  + blurStr + ')',
-        'opacity:'               + o.opacity,
-      ].join(';') + ';';
-
-      inner.appendChild(layer);
+      layer.style.cssText =
+        'position:absolute;inset:0;' +
+        '-webkit-mask-image:' + mask + ';' +
+        'mask-image:'         + mask + ';' +
+        '-webkit-backdrop-filter:blur(' + blur + ');' +
+        'backdrop-filter:blur(' + blur + ');';
+      frag.appendChild(layer);
     }
-
-    wrap.appendChild(inner);
-
-    /* ensure container has position so absolute child works */
-    var pos = window.getComputedStyle(container).position;
-    if (pos === 'static') container.style.position = 'relative';
-
-    container.appendChild(wrap);
-    this.el = wrap;
+    return frag;
   }
 
-  GradualBlur.prototype.destroy = function () {
-    if (this.el && this.el.parentNode) this.el.parentNode.removeChild(this.el);
+  function GradualBlurScroll(opts) {
+    var o = Object.assign({
+      strength:     4,
+      height:       '120px',
+      divCount:     9,
+      exponential:  true,
+      curve:        'bezier',
+      zIndex:       9000,
+      showTopAfter: 80,
+    }, opts || {});
+
+    this._o = o;
+    this._bottom = this._make('bottom');
+    this._top    = this._make('top');
+    this._overlays = [this._bottom, this._top];
+
+    this._onScroll = this._tick.bind(this);
+    window.addEventListener('scroll', this._onScroll, { passive: true });
+    this._tick();
+  }
+
+  GradualBlurScroll.prototype._make = function (position) {
+    var o = this._o;
+    var el = document.createElement('div');
+
+    // IMPORTANT: no overflow:hidden — that kills backdrop-filter
+    el.style.cssText =
+      'position:fixed;' +
+      (position === 'bottom' ? 'bottom:0;' : 'top:0;') +
+      'left:0;right:0;' +
+      'height:' + o.height + ';' +
+      'pointer-events:none;' +
+      'z-index:' + o.zIndex + ';' +
+      'opacity:' + (position === 'bottom' ? '1' : '0') + ';' +
+      'transition:opacity 0.3s ease;' +
+      'will-change:opacity;';
+
+    // inner wrapper — position relative so absolute children work
+    var inner = document.createElement('div');
+    inner.style.cssText = 'position:relative;width:100%;height:100%;';
+    inner.appendChild(buildLayers(position, o.strength, o.divCount, o.exponential, o.curve));
+
+    el.appendChild(inner);
+    document.body.appendChild(el);
+    return el;
   };
 
-  /* inject base CSS once */
-  (function injectCSS() {
-    if (document.getElementById('gradual-blur-styles')) return;
-    var s = document.createElement('style');
-    s.id = 'gradual-blur-styles';
-    s.textContent = [
-      '.gradual-blur { isolation: isolate; overflow: hidden; }',
-      '.gradual-blur-inner { pointer-events: none; }',
-      '@supports not (backdrop-filter: blur(1px)) {',
-      '  .gradual-blur-inner > div { background: rgba(255,255,255,0.5); }',
-      '}',
-    ].join('\n');
-    document.head.appendChild(s);
-  })();
+  GradualBlurScroll.prototype._tick = function () {
+    var sy  = window.scrollY || 0;
+    var max = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
 
-  window.GradualBlur = GradualBlur;
+    // bottom: always show once any scroll happened, fade out near the very end
+    var nearBottom = max > 40 ? Math.min(1, (max - sy) / 60) : 1;
+    this._bottom.style.opacity = nearBottom;
+
+    // top: fade in after scrolling past threshold
+    var topT = Math.max(0, Math.min(1, (sy - this._o.showTopAfter) / 50));
+    this._top.style.opacity = topT;
+  };
+
+  GradualBlurScroll.prototype.show = function () {
+    this._overlays.forEach(function (el) { el.style.display = ''; });
+    this._tick();
+  };
+
+  GradualBlurScroll.prototype.hide = function () {
+    this._overlays.forEach(function (el) { el.style.display = 'none'; });
+  };
+
+  GradualBlurScroll.prototype.destroy = function () {
+    window.removeEventListener('scroll', this._onScroll);
+    this._overlays.forEach(function (el) {
+      if (el.parentNode) el.parentNode.removeChild(el);
+    });
+  };
+
+  window.GradualBlurScroll = GradualBlurScroll;
 })();

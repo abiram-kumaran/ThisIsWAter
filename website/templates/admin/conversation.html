@@ -1,0 +1,59 @@
+{% extends "admin/base.html" %}
+{% block title %}Conversation{% endblock %}
+{% block page_title %}Conversation: {{ u1.username }} ↔ {{ u2.username }}{% endblock %}
+{% block content %}
+
+<div style="margin-bottom:16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+  <a href="{{ url_for('admin.user_detail', uid=u1.id) }}" class="btn-admin btn-secondary" style="font-size:12px;">
+    <i class="fas fa-arrow-left"></i> {{ u1.username }}'s profile
+  </a>
+  <a href="{{ url_for('admin.user_detail', uid=u2.id) }}" class="btn-admin btn-secondary" style="font-size:12px;">
+    {{ u2.username }}'s profile
+  </a>
+  <span style="font-size:13px;color:var(--muted);margin-left:6px;">{{ msgs|length }} message{{ 's' if msgs|length != 1 }}</span>
+</div>
+
+<div class="detail-card" style="max-width:700px;">
+  <h3><i class="fas fa-comment-dots" style="margin-right:6px;"></i>Full Conversation</h3>
+
+  {% if msgs %}
+  <div style="display:flex;flex-direction:column;gap:10px;max-height:70vh;overflow-y:auto;padding-right:6px;">
+    {% for m in msgs %}
+    <div class="msg-row {% if m.sender_id == u1.id %}left{% else %}right{% endif %}">
+      <div class="avatar-sm" style="width:28px;height:28px;font-size:11px;flex-shrink:0;">
+        {% if m.sender.profile_pic %}<img src="{{ url_for('static', filename=m.sender.profile_pic) }}" alt="">
+        {% else %}{{ m.sender.username[0]|upper }}{% endif %}
+      </div>
+      <div>
+        <div class="msg-bubble {% if m.sender_id == u1.id %}left{% else %}right{% endif %}">
+          {% if m.image_path %}
+          {% set ext = m.image_path.rsplit('.',1)[-1].lower() %}
+          {% if ext in ['png','jpg','jpeg','gif','webp'] %}
+          <img src="{{ url_for('static', filename=m.image_path) }}" style="max-width:200px;border-radius:8px;display:block;margin-bottom:4px;" alt="img">
+          {% else %}
+          <a href="{{ url_for('static', filename=m.image_path) }}" target="_blank" style="color:var(--accent);">
+            <i class="fas fa-file"></i> Attachment
+          </a>
+          {% endif %}
+          {% endif %}
+          {% if m.text and m.text != '[file]' %}{{ m.text }}{% endif %}
+        </div>
+        <div class="msg-meta" style="{% if m.sender_id != u1.id %}text-align:right;{% endif %}">
+          <strong style="color:var(--muted);">{{ m.sender.username }}</strong>
+          · {{ m.date_created.strftime('%b %d, %Y %I:%M %p') if m.date_created else '' }}
+          <form method="POST" action="{{ url_for('admin.message_delete', mid=m.id) }}"
+                style="display:inline;" onsubmit="return confirm('Delete this message?')">
+            <button type="submit" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:11px;padding:0 4px;">
+              <i class="fas fa-times"></i>
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p style="color:var(--muted);font-size:13px;">No messages in this conversation.</p>
+  {% endif %}
+</div>
+{% endblock %}

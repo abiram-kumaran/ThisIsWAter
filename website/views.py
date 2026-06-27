@@ -107,7 +107,7 @@ def delete_post(id):
 
     if not post:
         flash("Post does not exist.", category='error')
-    elif current_user.id != post.author and current_user.username != 'Abiram':
+    elif current_user.id != post.author and current_user.username != os.getenv('ADMIN_USERNAME', 'Abiram'):
         flash('You do not have permission to delete this post.', category='error')
     else:
         db.session.delete(post)
@@ -174,7 +174,7 @@ def get_suggestions():
         exclude_ids.add(r.sender_id)
         exclude_ids.add(r.receiver_id)
 
-    suggestions = User.query.filter(~User.id.in_(exclude_ids)).order_by(User.username).limit(8).all()
+    suggestions = User.query.filter(~User.id.in_(exclude_ids)).order_by(User.username).limit(4).all()
 
     result = []
     for u in suggestions:
@@ -280,7 +280,7 @@ def delete_comment(comment_id):
 
     if not comment:
         flash('Comment does not exist.', category='error')
-    elif current_user.id != comment.author and current_user.id != comment.post.author and current_user.username != "Abiram":
+    elif current_user.id != comment.author and current_user.id != comment.post.author and current_user.username != os.getenv('ADMIN_USERNAME', 'Abiram'):
         flash('You do not have permission to delete this comment.', category='error')
     else:
         db.session.delete(comment)
@@ -338,7 +338,8 @@ def get_messages(username):
     return jsonify({
         'messages': [{
             'id': m.id,
-            'text': m.text,
+            'text': m.text or '',
+            'image': url_for('static', filename=m.image_path) if m.image_path else None,
             'from_me': m.sender_id == current_user.id,
             'sender': m.sender.username,
             'time': m.date_created.strftime('%I:%M %p') if m.date_created else ''
@@ -378,6 +379,64 @@ def send_message():
         'message': {
             'id': msg.id,
             'text': msg.text,
+            'image': None,
+            'from_me': True,
+            'sender': current_user.username,
+            'time': msg.date_created.strftime('%I:%M %p') if msg.date_created else ''
+        }
+    })
+
+
+DM_ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp', 'pdf', 'txt', 'zip'}
+
+def dm_allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in DM_ALLOWED_EXTENSIONS
+
+IMAGE_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+
+@views.route("/api/messages/send-file", methods=['POST'])
+@login_required
+def send_dm_file():
+    username = (request.form.get('username') or '').strip()
+    caption = (request.form.get('caption') or '').strip()[:500]
+
+    if not username:
+        return jsonify({'error': 'Username is required.'}), 400
+
+    receiver = User.query.filter_by(username=username).first()
+    if not receiver:
+        return jsonify({'error': 'User not found.'}), 404
+    if receiver.id == current_user.id:
+        return jsonify({'error': 'Cannot message yourself.'}), 400
+    if not are_friends(current_user.id, receiver.id):
+        return jsonify({'error': 'You can only message friends.'}), 403
+
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file uploaded.'}), 400
+    file = request.files['file']
+    if not file or not file.filename:
+        return jsonify({'error': 'No file selected.'}), 400
+    if not dm_allowed_file(file.filename):
+        return jsonify({'error': 'Unsupported file type.'}), 400
+
+    ext = file.filename.rsplit('.', 1)[1].lower()
+    filename = f"dm_{current_user.id}_{uuid.uuid4().hex[:10]}.{ext}"
+    upload_dir = os.path.join(current_app.root_path, 'static', 'uploads', 'dm')
+    os.makedirs(upload_dir, exist_ok=True)
+    file.save(os.path.join(upload_dir, filename))
+
+    file_path = f'uploads/dm/{filename}'
+    msg_text = caption if caption else ('[file]' if ext not in IMAGE_EXTENSIONS else '')
+    msg = Message(sender_id=current_user.id, receiver_id=receiver.id,
+                  text=msg_text, image_path=file_path)
+    db.session.add(msg)
+    db.session.commit()
+
+    return jsonify({
+        'message': {
+            'id': msg.id,
+            'text': msg.text,
+            'image': url_for('static', filename=file_path),
             'from_me': True,
             'sender': current_user.username,
             'time': msg.date_created.strftime('%I:%M %p') if msg.date_created else ''

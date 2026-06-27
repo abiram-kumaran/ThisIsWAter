@@ -66,7 +66,8 @@ class Message(db.Model):
         'user.id', ondelete="CASCADE"), nullable=False, index=True)
     receiver_id = db.Column(db.Integer, db.ForeignKey(
         'user.id', ondelete="CASCADE"), nullable=False, index=True)
-    text = db.Column(db.String(500), nullable=False)
+    text = db.Column(db.String(500), nullable=False, default='')
+    image_path = db.Column(db.String(300), default='')
     date_created = db.Column(db.DateTime(timezone=True), server_default=func.now(), index=True)
 
     sender = db.relationship('User', foreign_keys=[sender_id], backref='sent_messages')

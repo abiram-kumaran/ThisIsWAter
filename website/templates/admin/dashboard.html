@@ -1,0 +1,199 @@
+{% extends "admin/base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+
+<!-- Stat grid -->
+<div class="row g-3 mb-4">
+
+  <div class="col-6 col-xl-3">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:rgba(99,102,241,0.15);color:#a5b4fc;">
+        <i class="fas fa-users"></i>
+      </div>
+      <div>
+        <div class="stat-value">{{ stats.users }}</div>
+        <div class="stat-label">Total Users</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-6 col-xl-3">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:rgba(34,197,94,0.15);color:#86efac;">
+        <i class="fas fa-file-alt"></i>
+      </div>
+      <div>
+        <div class="stat-value">{{ stats.posts }}</div>
+        <div class="stat-label">Total Posts</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-6 col-xl-3">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:rgba(245,158,11,0.15);color:#fcd34d;">
+        <i class="fas fa-comments"></i>
+      </div>
+      <div>
+        <div class="stat-value">{{ stats.comments }}</div>
+        <div class="stat-label">Comments</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-6 col-xl-3">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:rgba(239,68,68,0.15);color:#fca5a5;">
+        <i class="fas fa-thumbs-up"></i>
+      </div>
+      <div>
+        <div class="stat-value">{{ stats.likes }}</div>
+        <div class="stat-label">Likes</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-6 col-xl-3">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:rgba(139,92,246,0.15);color:#c4b5fd;">
+        <i class="fas fa-envelope"></i>
+      </div>
+      <div>
+        <div class="stat-value">{{ stats.messages }}</div>
+        <div class="stat-label">DM Messages</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-6 col-xl-3">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:rgba(20,184,166,0.15);color:#5eead4;">
+        <i class="fas fa-user-friends"></i>
+      </div>
+      <div>
+        <div class="stat-value">{{ stats.friend_requests }}</div>
+        <div class="stat-label">Friend Requests</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-6 col-xl-3">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:rgba(245,158,11,0.15);color:#fcd34d;">
+        <i class="fas fa-clock"></i>
+      </div>
+      <div>
+        <div class="stat-value">{{ stats.pending_fr }}</div>
+        <div class="stat-label">Pending Requests</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-6 col-xl-3">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:rgba(34,197,94,0.15);color:#86efac;">
+        <i class="fas fa-handshake"></i>
+      </div>
+      <div>
+        <div class="stat-value">{{ stats.accepted_fr }}</div>
+        <div class="stat-label">Friendships</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="row g-3">
+
+  <!-- Recent Users -->
+  <div class="col-12 col-xl-6">
+    <div class="admin-table-wrap">
+      <div class="admin-table-header">
+        <h2><i class="fas fa-users" style="margin-right:8px;color:var(--accent);"></i>Recent Users</h2>
+        <a href="{{ url_for('admin.users') }}" class="btn-admin btn-secondary" style="font-size:12px;">View All</a>
+      </div>
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Email</th>
+            <th>Joined</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for u in recent_users %}
+          <tr>
+            <td>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <div class="avatar-sm">
+                  {% if u.profile_pic %}
+                  <img src="{{ url_for('static', filename=u.profile_pic) }}" alt="">
+                  {% else %}
+                  {{ u.username[0]|upper }}
+                  {% endif %}
+                </div>
+                <span style="font-weight:600;">{{ u.username }}</span>
+              </div>
+            </td>
+            <td style="color:var(--muted);">{{ u.email }}</td>
+            <td style="color:var(--muted);font-size:12px;">
+              {{ u.date_created.strftime('%b %d, %Y') if u.date_created else '—' }}
+            </td>
+            <td>
+              <a href="{{ url_for('admin.user_detail', uid=u.id) }}" class="btn-admin btn-secondary" style="font-size:11px;padding:4px 10px;">
+                <i class="fas fa-eye"></i>
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Recent Posts -->
+  <div class="col-12 col-xl-6">
+    <div class="admin-table-wrap">
+      <div class="admin-table-header">
+        <h2><i class="fas fa-file-alt" style="margin-right:8px;color:var(--accent);"></i>Recent Posts</h2>
+        <a href="{{ url_for('admin.posts') }}" class="btn-admin btn-secondary" style="font-size:12px;">View All</a>
+      </div>
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Author</th>
+            <th>Preview</th>
+            <th>Date</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in recent_posts %}
+          <tr>
+            <td style="font-weight:600;white-space:nowrap;">{{ p.user.username }}</td>
+            <td style="color:var(--muted);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+              {{ p.text[:80] }}
+            </td>
+            <td style="color:var(--muted);font-size:12px;white-space:nowrap;">
+              {{ p.date_created.strftime('%b %d') if p.date_created else '—' }}
+            </td>
+            <td>
+              <form method="POST" action="{{ url_for('admin.post_delete', pid=p.id) }}"
+                    onsubmit="return confirm('Delete this post?')">
+                <button class="btn-admin btn-danger" style="font-size:11px;padding:4px 10px;" type="submit">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

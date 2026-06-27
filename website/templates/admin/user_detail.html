@@ -1,0 +1,238 @@
+{% extends "admin/base.html" %}
+{% block title %}User: {{ u.username }}{% endblock %}
+{% block page_title %}User — {{ u.username }}{% endblock %}
+
+{% block content %}
+
+<div style="margin-bottom:16px;">
+  <a href="{{ url_for('admin.users') }}" class="btn-admin btn-secondary" style="font-size:12px;">
+    <i class="fas fa-arrow-left"></i> Back to Users
+  </a>
+</div>
+
+<div class="row g-3">
+
+  <!-- Profile info + edit -->
+  <div class="col-12 col-xl-4">
+    <div class="detail-card mb-3">
+      <h3><i class="fas fa-id-card" style="margin-right:6px;"></i>Profile</h3>
+
+      <div style="text-align:center;margin-bottom:20px;">
+        <div class="avatar-sm" style="width:72px;height:72px;font-size:28px;margin:0 auto 10px;">
+          {% if u.profile_pic %}
+          <img src="{{ url_for('static', filename=u.profile_pic) }}" alt="">
+          {% else %}{{ u.username[0]|upper }}{% endif %}
+        </div>
+        <div style="font-weight:700;font-size:16px;color:#fff;">{{ u.username }}</div>
+        <div style="font-size:12px;color:var(--muted);">ID #{{ u.id }}</div>
+      </div>
+
+      <div class="detail-row"><span class="detail-label">Email</span><span class="detail-value">{{ u.email }}</span></div>
+      <div class="detail-row"><span class="detail-label">Bio</span><span class="detail-value">{{ u.bio or '—' }}</span></div>
+      <div class="detail-row"><span class="detail-label">Joined</span>
+        <span class="detail-value">{{ u.date_created.strftime('%b %d, %Y %I:%M %p') if u.date_created else '—' }}</span>
+      </div>
+      <div class="detail-row"><span class="detail-label">Profile Pic</span>
+        <span class="detail-value" style="font-size:12px;">{{ u.profile_pic or 'None' }}</span>
+      </div>
+      <div class="detail-row"><span class="detail-label">Posts</span><span class="detail-value">{{ posts|length }}</span></div>
+      <div class="detail-row"><span class="detail-label">Comments</span><span class="detail-value">{{ comments|length }}</span></div>
+      <div class="detail-row"><span class="detail-label">Likes given</span><span class="detail-value">{{ likes|length }}</span></div>
+      <div class="detail-row"><span class="detail-label">Friends</span><span class="detail-value">{{ friends|length }}</span></div>
+      <div class="detail-row"><span class="detail-label">DMs sent</span><span class="detail-value">{{ sent_msgs|length }}</span></div>
+      <div class="detail-row"><span class="detail-label">DMs received</span><span class="detail-value">{{ recv_msgs|length }}</span></div>
+    </div>
+
+    <!-- Edit form -->
+    <div class="detail-card mb-3">
+      <h3><i class="fas fa-edit" style="margin-right:6px;"></i>Edit User</h3>
+      <form method="POST" action="{{ url_for('admin.user_edit', uid=u.id) }}">
+        <div style="margin-bottom:12px;">
+          <label style="font-size:11px;color:var(--muted);font-weight:600;display:block;margin-bottom:5px;">USERNAME</label>
+          <input style="width:100%;background:#222535;border:1px solid rgba(255,255,255,0.08);color:#e2e8f0;
+                        border-radius:8px;padding:8px 12px;font-size:13px;outline:none;font-family:'Inter',sans-serif;"
+                 name="username" value="{{ u.username }}" required/>
+        </div>
+        <div style="margin-bottom:12px;">
+          <label style="font-size:11px;color:var(--muted);font-weight:600;display:block;margin-bottom:5px;">EMAIL</label>
+          <input style="width:100%;background:#222535;border:1px solid rgba(255,255,255,0.08);color:#e2e8f0;
+                        border-radius:8px;padding:8px 12px;font-size:13px;outline:none;font-family:'Inter',sans-serif;"
+                 name="email" type="email" value="{{ u.email }}" required/>
+        </div>
+        <div style="margin-bottom:12px;">
+          <label style="font-size:11px;color:var(--muted);font-weight:600;display:block;margin-bottom:5px;">BIO</label>
+          <textarea style="width:100%;background:#222535;border:1px solid rgba(255,255,255,0.08);color:#e2e8f0;
+                           border-radius:8px;padding:8px 12px;font-size:13px;outline:none;font-family:'Inter',sans-serif;
+                           resize:vertical;min-height:70px;"
+                    name="bio">{{ u.bio or '' }}</textarea>
+        </div>
+        <div style="margin-bottom:16px;">
+          <label style="font-size:11px;color:var(--muted);font-weight:600;display:block;margin-bottom:5px;">NEW PASSWORD <span style="font-weight:400;">(leave blank to keep)</span></label>
+          <input style="width:100%;background:#222535;border:1px solid rgba(255,255,255,0.08);color:#e2e8f0;
+                        border-radius:8px;padding:8px 12px;font-size:13px;outline:none;font-family:'Inter',sans-serif;"
+                 name="new_password" type="password" placeholder="New password…"/>
+        </div>
+        <button class="btn-admin btn-primary" type="submit" style="width:100%;">
+          <i class="fas fa-save"></i> Save Changes
+        </button>
+      </form>
+    </div>
+
+    <!-- Danger zone -->
+    <div class="detail-card" style="border-color:rgba(239,68,68,0.25);">
+      <h3 style="color:#fca5a5;"><i class="fas fa-exclamation-triangle" style="margin-right:6px;"></i>Danger Zone</h3>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">
+        Permanently deletes this user and all their posts, comments, messages, likes, and friend requests.
+      </p>
+      <form method="POST" action="{{ url_for('admin.user_delete', uid=u.id) }}"
+            onsubmit="return confirm('PERMANENTLY delete {{ u.username }}? This cannot be undone.')">
+        <button class="btn-admin btn-danger" type="submit" style="width:100%;">
+          <i class="fas fa-trash"></i> Delete User Permanently
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Right column: posts, messages, friends -->
+  <div class="col-12 col-xl-8">
+
+    <!-- Friends -->
+    <div class="detail-card mb-3">
+      <h3><i class="fas fa-user-friends" style="margin-right:6px;"></i>Friends ({{ friends|length }})</h3>
+      {% if friends %}
+      <div style="display:flex;flex-wrap:wrap;gap:10px;">
+        {% for f in friends %}
+        <a href="{{ url_for('admin.user_detail', uid=f.id) }}"
+           style="display:flex;align-items:center;gap:8px;background:var(--surface2);border-radius:10px;
+                  padding:7px 12px;text-decoration:none;font-size:13px;color:var(--text);">
+          <div class="avatar-sm" style="width:26px;height:26px;font-size:11px;">
+            {% if f.profile_pic %}<img src="{{ url_for('static', filename=f.profile_pic) }}" alt="">
+            {% else %}{{ f.username[0]|upper }}{% endif %}
+          </div>
+          {{ f.username }}
+        </a>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p style="font-size:13px;color:var(--muted);">No friends yet.</p>
+      {% endif %}
+    </div>
+
+    <!-- Posts -->
+    <div class="admin-table-wrap mb-3">
+      <div class="admin-table-header">
+        <h2><i class="fas fa-file-alt" style="margin-right:6px;color:var(--accent);"></i>Posts ({{ posts|length }})</h2>
+      </div>
+      {% if posts %}
+      <table class="admin-table">
+        <thead><tr><th>ID</th><th>Content</th><th>Likes</th><th>Comments</th><th>Date</th><th></th></tr></thead>
+        <tbody>
+          {% for p in posts %}
+          <tr>
+            <td style="color:var(--muted);font-size:12px;">#{{ p.id }}</td>
+            <td style="max-width:280px;font-size:13px;">{{ p.text[:120] }}{% if p.text|length > 120 %}…{% endif %}</td>
+            <td><span class="badge-pill badge-red">{{ p.likes|length }}</span></td>
+            <td><span class="badge-pill badge-yellow">{{ p.comments|length }}</span></td>
+            <td style="font-size:12px;color:var(--muted);white-space:nowrap;">
+              {{ p.date_created.strftime('%b %d, %Y') if p.date_created else '—' }}
+            </td>
+            <td>
+              <form method="POST" action="{{ url_for('admin.post_delete', pid=p.id) }}"
+                    onsubmit="return confirm('Delete post #{{ p.id }}?')">
+                <button class="btn-admin btn-danger" style="font-size:11px;padding:4px 9px;" type="submit">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div style="padding:20px;text-align:center;color:var(--muted);font-size:13px;">No posts.</div>
+      {% endif %}
+    </div>
+
+    <!-- DM Conversations -->
+    <div class="detail-card mb-3">
+      <h3><i class="fas fa-envelope" style="margin-right:6px;"></i>DM Conversations</h3>
+      {% set convo_partners = [] %}
+      {% for m in sent_msgs %}
+        {% if m.receiver not in convo_partners %}{% set _ = convo_partners.append(m.receiver) %}{% endif %}
+      {% endfor %}
+      {% for m in recv_msgs %}
+        {% if m.sender not in convo_partners %}{% set _ = convo_partners.append(m.sender) %}{% endif %}
+      {% endfor %}
+      {% if convo_partners %}
+      <div style="display:flex;flex-wrap:wrap;gap:8px;">
+        {% for partner in convo_partners %}
+        <a href="{{ url_for('admin.conversation', uid1=u.id, uid2=partner.id) }}"
+           style="display:flex;align-items:center;gap:8px;background:var(--surface2);border-radius:10px;
+                  padding:8px 14px;text-decoration:none;font-size:13px;color:var(--text);">
+          <i class="fas fa-comment-dots" style="color:var(--accent);"></i>
+          {{ partner.username }}
+        </a>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p style="font-size:13px;color:var(--muted);">No messages.</p>
+      {% endif %}
+    </div>
+
+    <!-- Friend Requests sent -->
+    <div class="admin-table-wrap mb-3">
+      <div class="admin-table-header">
+        <h2><i class="fas fa-paper-plane" style="margin-right:6px;color:var(--accent);"></i>Friend Requests Sent ({{ sent_reqs|length }})</h2>
+      </div>
+      {% if sent_reqs %}
+      <table class="admin-table">
+        <thead><tr><th>To</th><th>Status</th><th>Date</th></tr></thead>
+        <tbody>
+          {% for fr in sent_reqs %}
+          <tr>
+            <td><a href="{{ url_for('admin.user_detail', uid=fr.receiver_id) }}" style="color:var(--accent);">{{ fr.receiver.username }}</a></td>
+            <td>
+              {% if fr.status == 'accepted' %}<span class="badge-pill badge-green">Accepted</span>
+              {% elif fr.status == 'pending' %}<span class="badge-pill badge-yellow">Pending</span>
+              {% else %}<span class="badge-pill badge-gray">{{ fr.status|title }}</span>{% endif %}
+            </td>
+            <td style="font-size:12px;color:var(--muted);">{{ fr.date_created.strftime('%b %d, %Y') if fr.date_created else '—' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div style="padding:16px;text-align:center;color:var(--muted);font-size:13px;">None sent.</div>
+      {% endif %}
+    </div>
+
+    <!-- Friend Requests received -->
+    <div class="admin-table-wrap">
+      <div class="admin-table-header">
+        <h2><i class="fas fa-inbox" style="margin-right:6px;color:var(--accent);"></i>Friend Requests Received ({{ recv_reqs|length }})</h2>
+      </div>
+      {% if recv_reqs %}
+      <table class="admin-table">
+        <thead><tr><th>From</th><th>Status</th><th>Date</th></tr></thead>
+        <tbody>
+          {% for fr in recv_reqs %}
+          <tr>
+            <td><a href="{{ url_for('admin.user_detail', uid=fr.sender_id) }}" style="color:var(--accent);">{{ fr.sender.username }}</a></td>
+            <td>
+              {% if fr.status == 'accepted' %}<span class="badge-pill badge-green">Accepted</span>
+              {% elif fr.status == 'pending' %}<span class="badge-pill badge-yellow">Pending</span>
+              {% else %}<span class="badge-pill badge-gray">{{ fr.status|title }}</span>{% endif %}
+            </td>
+            <td style="font-size:12px;color:var(--muted);">{{ fr.date_created.strftime('%b %d, %Y') if fr.date_created else '—' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div style="padding:16px;text-align:center;color:var(--muted);font-size:13px;">None received.</div>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+{% endblock %}

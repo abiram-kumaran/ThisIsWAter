@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Water droplet icon">
+  <defs>
+    <linearGradient id="water-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7dd3fc" />
+      <stop offset="45%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#0f172a" />
+    </linearGradient>
+    <radialGradient id="highlight" cx="35%" cy="25%" r="40%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.9" />
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+  <rect width="256" height="256" rx="40" fill="#0f172a" />
+  <path d="M128 36c-24 38-56 70-56 114 0 44 36 80 80 80s80-36 80-80c0-44-32-76-56-114-6-9-10-13-16-14-5 0-10 4-16 14z" fill="url(#water-grad)" stroke="#ffffff" stroke-opacity="0.12" stroke-width="4" />
+  <circle cx="112" cy="96" r="24" fill="url(#highlight)" opacity="0.85" />
+</svg>

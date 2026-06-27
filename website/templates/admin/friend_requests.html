@@ -1,0 +1,74 @@
+{% extends "admin/base.html" %}
+{% block title %}Friend Requests{% endblock %}
+{% block page_title %}Friend Requests{% endblock %}
+{% block content %}
+<div class="admin-table-wrap">
+  <div class="admin-table-header">
+    <h2><i class="fas fa-user-friends" style="margin-right:8px;color:var(--accent);"></i>
+      Friend Requests <span style="color:var(--muted);font-weight:400;font-size:13px;">({{ pagination.total }})</span>
+    </h2>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;">
+      <a href="{{ url_for('admin.friend_requests') }}" class="btn-admin {% if not status %}btn-primary{% else %}btn-secondary{% endif %}" style="font-size:12px;">All</a>
+      <a href="{{ url_for('admin.friend_requests', status='pending') }}" class="btn-admin {% if status=='pending' %}btn-primary{% else %}btn-secondary{% endif %}" style="font-size:12px;">Pending</a>
+      <a href="{{ url_for('admin.friend_requests', status='accepted') }}" class="btn-admin {% if status=='accepted' %}btn-primary{% else %}btn-secondary{% endif %}" style="font-size:12px;">Accepted</a>
+      <a href="{{ url_for('admin.friend_requests', status='declined') }}" class="btn-admin {% if status=='declined' %}btn-primary{% else %}btn-secondary{% endif %}" style="font-size:12px;">Declined</a>
+    </div>
+  </div>
+  <table class="admin-table">
+    <thead>
+      <tr><th>ID</th><th>From</th><th>To</th><th>Status</th><th>Date</th><th>Delete</th></tr>
+    </thead>
+    <tbody>
+      {% for fr in pagination.items %}
+      <tr>
+        <td style="color:var(--muted);font-size:12px;">#{{ fr.id }}</td>
+        <td>
+          <a href="{{ url_for('admin.user_detail', uid=fr.sender_id) }}" style="color:var(--accent);font-weight:600;text-decoration:none;">
+            {{ fr.sender.username }}
+          </a>
+        </td>
+        <td>
+          <a href="{{ url_for('admin.user_detail', uid=fr.receiver_id) }}" style="color:var(--muted);text-decoration:none;">
+            {{ fr.receiver.username }}
+          </a>
+        </td>
+        <td>
+          {% if fr.status == 'accepted' %}<span class="badge-pill badge-green">Accepted</span>
+          {% elif fr.status == 'pending' %}<span class="badge-pill badge-yellow">Pending</span>
+          {% else %}<span class="badge-pill badge-gray">{{ fr.status|title }}</span>{% endif %}
+        </td>
+        <td style="font-size:12px;color:var(--muted);white-space:nowrap;">
+          {{ fr.date_created.strftime('%b %d, %Y') if fr.date_created else '—' }}
+        </td>
+        <td>
+          <form method="POST" action="{{ url_for('admin.friend_request_delete', fid=fr.id) }}"
+                onsubmit="return confirm('Delete this friend request?')">
+            <button class="btn-admin btn-danger" style="font-size:11px;padding:5px 10px;" type="submit">
+              <i class="fas fa-trash"></i>
+            </button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" style="text-align:center;color:var(--muted);padding:28px;">No requests found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% if pagination.pages > 1 %}
+  <div class="pagination-wrap">
+    <small>Page {{ pagination.page }} of {{ pagination.pages }} — {{ pagination.total }} total</small>
+    <div class="pag-btns">
+      <a class="pag-btn {% if not pagination.has_prev %}disabled{% endif %}"
+         href="{{ url_for('admin.friend_requests', page=pagination.prev_num, status=status) }}">← Prev</a>
+      {% for p in pagination.iter_pages() %}
+        {% if p %}<a class="pag-btn {% if p == pagination.page %}active{% endif %}"
+           href="{{ url_for('admin.friend_requests', page=p, status=status) }}">{{ p }}</a>
+        {% else %}<span class="pag-btn disabled">…</span>{% endif %}
+      {% endfor %}
+      <a class="pag-btn {% if not pagination.has_next %}disabled{% endif %}"
+         href="{{ url_for('admin.friend_requests', page=pagination.next_num, status=status) }}">Next →</a>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

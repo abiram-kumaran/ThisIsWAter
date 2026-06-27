@@ -13,7 +13,10 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" crossorigin="anonymous"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://kit.fontawesome.com/999ca2bb93.js" crossorigin="anonymous"></script>
-  <title>{% block title %}{% endblock %} — G~Hues</title>
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon-water.svg') }}" />
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}" />
+  <link rel="icon" type="image/png"   href="{{ url_for('static', filename='favicon.png') }}" />
+  <title>{% block title %}{% endblock %} — This is WAter.</title>
   <style>
     *,
     *::before,
@@ -85,22 +88,39 @@
       right: 16px;
       z-index: 10001;
       min-width: min(300px, 90vw);
-      border-radius: 12px;
+      border-radius: 14px;
       font-size: 14px;
       border: none;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18), 0 1px 0 rgba(255,255,255,0.6) inset;
+      backdrop-filter: blur(20px) saturate(160%);
+      -webkit-backdrop-filter: blur(20px) saturate(160%);
     }
 
     .alert-success {
-      background: #fff;
-      color: #333;
-      border-left: 4px solid #111;
+      background: rgba(255, 255, 255, 0.92) !important;
+      border-left: 4px solid #111 !important;
+    }
+
+    .alert-success,
+    .alert-success * {
+      color: #1a1a1a !important;
+      font-weight: 600 !important;
     }
 
     .alert-danger {
-      background: #fff;
-      color: #c0392b;
-      border-left: 4px solid #c0392b;
+      background: rgba(255, 255, 255, 0.92) !important;
+      border-left: 4px solid #c0392b !important;
+    }
+
+    .alert-danger,
+    .alert-danger * {
+      color: #c0392b !important;
+      font-weight: 600 !important;
+    }
+
+    .alert .btn-close {
+      filter: invert(0) !important;
+      opacity: 0.5;
     }
 
     /* ── DM BLACK BAR ── */
@@ -556,11 +576,13 @@
 
     .dm-full-input-row {
       display: flex;
-      gap: 10px;
-      padding: clamp(14px, 2.5vh, 20px) clamp(20px, 4vw, 28px);
+      align-items: center;
+      gap: 8px;
+      padding: clamp(12px, 2vh, 16px) clamp(16px, 3vw, 24px);
       border-top: 1px solid rgba(255, 255, 255, 0.08);
       flex-shrink: 0;
       transition: opacity 0.3s ease;
+      background: rgba(255,255,255,0.02);
     }
 
     .dm-full-input-row.hidden {
@@ -568,13 +590,34 @@
       pointer-events: none;
     }
 
+    .dm-attach-btn {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 12px;
+      color: rgba(255,255,255,0.5);
+      width: 42px;
+      height: 42px;
+      font-size: 15px;
+      cursor: pointer;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+    .dm-attach-btn:hover {
+      background: rgba(255,255,255,0.14);
+      color: #fff;
+      border-color: rgba(255,255,255,0.25);
+    }
+
     .dm-full-input-row input {
       flex: 1;
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
       color: #fff;
-      padding: 12px 16px;
+      padding: 11px 18px;
       font-size: 14px;
       font-family: 'Poppins', sans-serif;
       outline: none;
@@ -582,39 +625,96 @@
     }
 
     .dm-full-input-row input:focus {
-      border-color: rgba(255, 255, 255, 0.3);
-      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.28);
+      background: rgba(255, 255, 255, 0.1);
     }
 
     .dm-full-input-row input::placeholder {
-      color: rgba(255, 255, 255, 0.3);
+      color: rgba(255, 255, 255, 0.28);
     }
 
-    .dm-full-input-row button {
+    .dm-send-btn {
       background: #fff;
       border: none;
-      border-radius: 14px;
+      border-radius: 50%;
       color: #111;
-      width: 48px;
-      height: 48px;
-      font-size: 16px;
+      width: 42px;
+      height: 42px;
+      font-size: 15px;
       cursor: pointer;
-      transition: transform 0.2s;
       flex-shrink: 0;
       display: flex;
       align-items: center;
       justify-content: center;
+      transition: transform 0.2s, background 0.2s;
+      overflow: hidden;
+      position: relative;
+    }
+    .dm-send-btn:hover { transform: scale(1.08); background: #f0f0f0; }
+    .dm-send-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+    /* Send button animation */
+    @keyframes dmSendFly {
+      0%   { transform: translate(0, 0) scale(1); opacity: 1; }
+      40%  { transform: translate(12px, -10px) scale(0.7); opacity: 0; }
+      41%  { transform: translate(-10px, 6px) scale(0.5); opacity: 0; }
+      100% { transform: translate(0, 0) scale(1); opacity: 1; }
+    }
+    .dm-send-btn.sending i {
+      animation: dmSendFly 0.45s cubic-bezier(0.22,1,0.36,1) forwards;
     }
 
-    .dm-full-input-row button:hover {
-      transform: scale(1.05);
+    /* File preview bubble */
+    .dm-bubble-img {
+      max-width: 220px;
+      max-height: 200px;
+      border-radius: 10px;
+      display: block;
+      margin-bottom: 4px;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .dm-bubble-img:hover { opacity: 0.9; }
+    .dm-bubble-file {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 12px;
+      color: rgba(255,255,255,0.75);
+      text-decoration: none;
+    }
+    .dm-bubble.me .dm-bubble-file {
+      background: rgba(0,0,0,0.07);
+      color: #333;
     }
 
-    .dm-full-input-row button:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
-      transform: none;
+    /* Attach preview bar */
+    #dmAttachPreview {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      padding: 8px clamp(16px, 3vw, 24px);
+      background: rgba(255,255,255,0.04);
+      border-top: 1px solid rgba(255,255,255,0.06);
+      font-size: 12px;
+      color: rgba(255,255,255,0.6);
     }
+    #dmAttachPreview.visible { display: flex; }
+    #dmAttachPreview img {
+      height: 40px;
+      width: 40px;
+      object-fit: cover;
+      border-radius: 6px;
+    }
+    #dmAttachPreviewName { flex:1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    #dmAttachClear {
+      background: none; border: none; color: rgba(255,255,255,0.4);
+      font-size: 14px; cursor: pointer; padding: 0 4px;
+    }
+    #dmAttachClear:hover { color: #fff; }
 
     /* ── MAIN CONTENT ── */
     .main-content {
@@ -918,12 +1018,24 @@
 
     .suggestion-add-btn:hover {
       background: #333;
+      color: #fff !important;
     }
 
     .suggestion-add-btn:disabled {
       background: #ccc;
       color: #888 !important;
       cursor: default;
+    }
+
+    /* Force white text on the add button regardless of global overrides */
+    body:not(.auth-page):not(.messaging-mode) .suggestion-add-btn,
+    body:not(.auth-page):not(.messaging-mode) .suggestion-add-btn i,
+    body:not(.auth-page):not(.messaging-mode) .suggestion-add-btn span {
+      color: #ffffff !important;
+      font-weight: 600 !important;
+    }
+    body:not(.auth-page):not(.messaging-mode) .suggestion-add-btn:disabled {
+      color: #888 !important;
     }
 
     @media (max-width: 640px) {
@@ -1090,6 +1202,40 @@
             <button onclick="dmSearchAndAddFriend()"><i class="fas fa-search"></i></button>
           </div>
           <div id="dmFriendResult" style="margin-top:8px;font-size:12px;color:rgba(255,255,255,0.5);"></div>
+          {% if suggested_users %}
+          <div style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.08);">
+            <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.35);text-transform:uppercase;
+                        letter-spacing:1px;margin-bottom:8px;">
+              <i class="fas fa-user-plus" style="margin-right:5px;"></i>People you may know
+            </div>
+            {% for su in suggested_users %}
+            <div id="dm-sugg-{{ su.id }}"
+                 style="display:flex;align-items:center;gap:10px;padding:7px 0;
+                        border-bottom:1px solid rgba(255,255,255,0.05);">
+              <div style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.15);
+                          display:flex;align-items:center;justify-content:center;font-size:13px;
+                          font-weight:700;color:#fff;overflow:hidden;flex-shrink:0;">
+                {% if su.profile_pic %}
+                <img src="{{ url_for('static', filename=su.profile_pic) }}" alt=""
+                     style="width:100%;height:100%;object-fit:cover;">
+                {% else %}{{ su.username[0]|upper }}{% endif %}
+              </div>
+              <span style="flex:1;font-size:13px;font-weight:500;color:rgba(255,255,255,0.8);
+                           white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                {{ su.username }}
+              </span>
+              <button id="sugg-btn-{{ su.id }}"
+                      onclick="sendSuggestionRequest({{ su.id }}, '{{ su.username }}')"
+                      style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);
+                             border-radius:8px;color:#fff;font-size:11px;font-weight:600;
+                             padding:4px 10px;cursor:pointer;white-space:nowrap;flex-shrink:0;
+                             font-family:'Poppins',sans-serif;transition:background 0.2s;">
+                <i class="fas fa-plus" style="margin-right:3px;"></i>Add
+              </button>
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
         </div>
         <div class="dm-user-list" id="dmUserList">
           {% for u in all_users %}
@@ -1123,9 +1269,18 @@
         <div class="dm-full-messages" id="dmFullMessages">
           <div class="dm-empty"><i class="far fa-comment-dots"></i>Pick a conversation or add a new friend</div>
         </div>
+        <div id="dmAttachPreview">
+          <span id="dmAttachPreviewThumb"></span>
+          <span id="dmAttachPreviewName">No file</span>
+          <button id="dmAttachClear" onclick="clearDMAttach()" title="Remove"><i class="fas fa-times"></i></button>
+        </div>
         <div class="dm-full-input-row hidden" id="dmInputRow">
+          <button class="dm-attach-btn" onclick="document.getElementById('dmFileInput').click()" title="Attach file">
+            <i class="fas fa-paperclip"></i>
+          </button>
+          <input type="file" id="dmFileInput" accept="image/*,.pdf,.txt,.zip" style="display:none" onchange="onDMFileSelected(this)" />
           <input type="text" id="dmFullInput" placeholder="Type a message..." maxlength="500" />
-          <button onclick="sendDMChat()" id="dmSendBtn"><i class="fas fa-paper-plane"></i></button>
+          <button class="dm-send-btn" onclick="sendDMChat()" id="dmSendBtn"><i class="fas fa-paper-plane"></i></button>
         </div>
       </div>
     </div>
@@ -1140,6 +1295,8 @@
   <script src="{{ url_for('static', filename='effects/page-bg.js') }}"></script>
   <script src="{{ url_for('static', filename='effects/tv-boot.js') }}"></script>
   <script src="{{ url_for('static', filename='effects/dm-effects.js') }}"></script>
+  <script src="{{ url_for('static', filename='effects/dock-nav.js') }}"></script>
+  <script src="{{ url_for('static', filename='effects/gradual-blur.js') }}"></script>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
     crossorigin="anonymous"></script>
@@ -1199,6 +1356,15 @@
             triggerPageTransition();
           });
         });
+        // Init spring magnification
+        if (typeof DockNav !== 'undefined') {
+          new DockNav(panel, {
+            baseSize: 44,
+            magnification: 58,
+            distance: 110,
+            spring: { mass: 0.12, stiffness: 160, damping: 14 }
+          });
+        }
       }
     })();
 
@@ -1264,6 +1430,7 @@
         input.onkeydown = function (ev) {
           if (ev.key === 'Enter' && !ev.shiftKey) { ev.preventDefault(); sendDMChat(); }
         };
+        clearDMAttach();
       });
     }
 
@@ -1334,9 +1501,57 @@
       if (msgs.length === lastMsgCount) return;
       lastMsgCount = msgs.length;
       box.innerHTML = msgs.map(function (m) {
-        return '<div class="dm-bubble ' + (m.from_me ? 'me' : 'them') + '">' + m.text + '<span class="dm-bubble-time">' + (m.time || '') + '</span></div>';
+        var cls = m.from_me ? 'me' : 'them';
+        var content = '';
+        if (m.image) {
+          var ext = m.image.split('.').pop().toLowerCase();
+          var imgExts = ['png','jpg','jpeg','gif','webp'];
+          if (imgExts.indexOf(ext) !== -1) {
+            content += '<img class="dm-bubble-img" src="' + m.image + '" alt="image" onclick="window.open(this.src)" />';
+          } else {
+            content += '<a class="dm-bubble-file" href="' + m.image + '" target="_blank" download><i class="fas fa-file" style="font-size:16px;"></i>' + (m.text || 'File') + '</a>';
+          }
+        }
+        if (m.text && !(m.image && (m.text === '[file]' || m.text === ''))) {
+          content += '<span style="display:block;">' + escapeHtml(m.text) + '</span>';
+        }
+        return '<div class="dm-bubble ' + cls + '">' + content + '<span class="dm-bubble-time">' + (m.time || '') + '</span></div>';
       }).join('');
       box.scrollTop = box.scrollHeight;
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    var _dmAttachFile = null;
+
+    function onDMFileSelected(input) {
+      var file = input.files && input.files[0];
+      if (!file) return;
+      _dmAttachFile = file;
+      var preview = document.getElementById('dmAttachPreview');
+      var thumb = document.getElementById('dmAttachPreviewThumb');
+      var name = document.getElementById('dmAttachPreviewName');
+      name.textContent = file.name;
+      if (file.type.startsWith('image/')) {
+        var reader = new FileReader();
+        reader.onload = function(e) { thumb.innerHTML = '<img src="' + e.target.result + '" alt="">'; };
+        reader.readAsDataURL(file);
+      } else {
+        thumb.innerHTML = '<i class="fas fa-file" style="font-size:20px;opacity:0.6;"></i>';
+      }
+      preview.classList.add('visible');
+      document.getElementById('dmFullInput').placeholder = 'Add a caption (optional)...';
+    }
+
+    function clearDMAttach() {
+      _dmAttachFile = null;
+      document.getElementById('dmAttachPreview').classList.remove('visible');
+      document.getElementById('dmAttachPreviewThumb').innerHTML = '';
+      document.getElementById('dmAttachPreviewName').textContent = 'No file';
+      document.getElementById('dmFileInput').value = '';
+      document.getElementById('dmFullInput').placeholder = 'Type a message...';
     }
 
     function sendDMChat() {
@@ -1344,31 +1559,54 @@
       var input = document.getElementById('dmFullInput');
       var btn = document.getElementById('dmSendBtn');
       var text = input.value.trim();
-      if (!text) return;
 
-      // Trigger send animation on the button
+      if (!text && !_dmAttachFile) return;
+
+      // Trigger send animation
       btn.classList.remove('sending');
-      void btn.offsetWidth; // force reflow so re-triggering works
+      void btn.offsetWidth;
       btn.classList.add('sending');
       btn.addEventListener('animationend', function onEnd() {
         btn.classList.remove('sending');
         btn.removeEventListener('animationend', onEnd);
-      });
+      }, { once: true });
 
       btn.disabled = true;
-      fetch('/api/messages/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: activeDMUser, text: text })
-      }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
-        .then(function (res) {
-          btn.disabled = false;
-          if (!res.ok) { alert(res.data.error || 'Failed to send.'); return; }
-          input.value = '';
-          lastMsgCount = 0;
-          loadMessages(activeDMUser);
-        })
-        .catch(function () { btn.disabled = false; });
+
+      if (_dmAttachFile) {
+        // Send file
+        var fd = new FormData();
+        fd.append('username', activeDMUser);
+        fd.append('file', _dmAttachFile);
+        if (text) fd.append('caption', text);
+
+        fetch('/api/messages/send-file', { method: 'POST', body: fd })
+          .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
+          .then(function (res) {
+            btn.disabled = false;
+            if (!res.ok) { alert(res.data.error || 'Failed to send.'); return; }
+            input.value = '';
+            clearDMAttach();
+            lastMsgCount = 0;
+            loadMessages(activeDMUser);
+          })
+          .catch(function () { btn.disabled = false; });
+      } else {
+        // Send text
+        fetch('/api/messages/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: activeDMUser, text: text })
+        }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
+          .then(function (res) {
+            btn.disabled = false;
+            if (!res.ok) { alert(res.data.error || 'Failed to send.'); return; }
+            input.value = '';
+            lastMsgCount = 0;
+            loadMessages(activeDMUser);
+          })
+          .catch(function () { btn.disabled = false; });
+      }
     }
 
     function startDMPolling() {
@@ -1503,6 +1741,12 @@
           }
           btn.innerHTML = '<i class="fas fa-check" style="margin-right:4px;"></i>Sent!';
           btn.style.background = '#444';
+          var row = document.getElementById('dm-sugg-' + userId) || document.getElementById('sugg-row-' + userId);
+          if (row) {
+            row.style.transition = 'opacity 0.3s ease';
+            row.style.opacity = '0';
+            setTimeout(function () { row.remove(); }, 300);
+          }
         });
     }
 

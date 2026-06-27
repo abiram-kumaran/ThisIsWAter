@@ -9,43 +9,56 @@
     margin: 0 auto;
   }
 
+  /* ── Feed header ── */
   .feed-header {
     text-align: center;
-    margin-bottom: clamp(20px, 4vh, 28px);
+    margin-bottom: clamp(24px, 4vh, 32px);
+    padding-bottom: 18px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
   }
-  .feed-header h1 {
-    font-size: clamp(20px, 4vw, 26px);
-    font-weight: 700; color: #111; letter-spacing: 2px;
-  }
-  .feed-header p { font-size: 12px; color: #aaa; margin-top: 3px; }
+  .feed-header h1 { margin-bottom: 4px; }
+  .feed-header p { font-size: 12px; color: rgba(255,255,255,0.4); margin-top: 4px; }
 
+  /* ── Post cards ── */
   .card {
-    background: #fff; border: 1px solid #ececec;
-    border-radius: 16px; margin-bottom: 18px; overflow: hidden;
-    transition: box-shadow 0.2s ease, transform 0.2s ease;
-    box-shadow: 0 1px 8px rgba(0,0,0,0.05);
+    background: rgba(255,255,255,0.95);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 18px;
+    margin-bottom: 16px;
+    overflow: hidden;
+    transition: box-shadow 0.25s ease, transform 0.25s ease;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.12);
   }
-  .card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.09); transform: translateY(-2px); }
+  .card:hover {
+    box-shadow: 0 6px 28px rgba(0,0,0,0.2);
+    transform: translateY(-2px);
+  }
 
   .card-header {
-    background: #fafafa; border-bottom: 1px solid #f0f0f0;
-    padding: 12px 16px; display: flex; justify-content: space-between; align-items: center;
+    background: #fff;
+    border-bottom: 1px solid #f0f0f0;
+    padding: 12px 16px;
+    display: flex; justify-content: space-between; align-items: center;
   }
   .card-header a {
     color: #111; font-weight: 600; font-size: 14px;
-    text-decoration: none; display: flex; align-items: center; gap: 8px;
+    text-decoration: none; display: flex; align-items: center; gap: 10px;
   }
   .card-header a:hover { color: #444; }
 
   .user-avatar-sm {
-    width: 30px; height: 30px; border-radius: 50%;
+    width: 32px; height: 32px; border-radius: 50%;
     background: #111; display: flex; align-items: center; justify-content: center;
     font-size: 12px; font-weight: 700; color: #fff; flex-shrink: 0; overflow: hidden;
   }
   .user-avatar-sm img { width: 100%; height: 100%; object-fit: cover; }
 
   .card-body { padding: 14px 16px; background: #fff; }
-  .card-text { font-size: clamp(14px, 2vw, 15px); line-height: 1.65; color: #222; margin-bottom: 12px; }
+  .card-text { font-size: 15px; line-height: 1.7; color: #1a1a1a; margin-bottom: 10px; }
+  .post-date-row {
+    font-size: 11px; color: #bbb; margin-bottom: 10px;
+    display: flex; align-items: center; gap: 5px;
+  }
 
   .like-area { display: flex; align-items: center; gap: 6px; }
   .like-count { font-size: 13px; color: #aaa; min-width: 14px; }
@@ -57,8 +70,11 @@
     background: transparent; border: 1px solid #e8e8e8;
     color: #bbb; border-radius: 8px !important; font-size: 11px; padding: 3px 8px;
   }
-  .dropdown-menu { background: #fff; border: 1px solid #eee; border-radius: 10px; box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
-  .dropdown-item { color: #333; font-size: 13px; }
+  .dropdown-menu {
+    background: #fff; border: 1px solid #eee; border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+  }
+  .dropdown-item { color: #333; font-size: 13px; padding: 8px 16px; }
   .dropdown-item.text-danger { color: #c0392b !important; }
 
   .comment-container { margin-top: 10px; padding-top: 10px; border-top: 1px solid #f5f5f5; }
@@ -78,37 +94,64 @@
   .comment-form { display: flex; gap: 8px; margin-top: 10px; }
   .comment-form input {
     flex: 1; background: #f5f5f5; border: 1px solid #ececec;
-    border-radius: 10px; color: #111; padding: 8px 13px; font-size: 13px;
+    border-radius: 20px; color: #111; padding: 8px 14px; font-size: 13px;
     font-family: 'Poppins', sans-serif; outline: none;
   }
   .comment-form input:focus { border-color: #ccc; background: #fff; }
   .comment-form button {
-    background: #111; border: none; border-radius: 10px;
-    color: #fff; padding: 8px 13px; font-size: 13px; cursor: pointer;
+    background: #111; border: none; border-radius: 50%;
+    color: #fff; width: 36px; height: 36px; font-size: 13px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s, transform 0.2s;
+    flex-shrink: 0;
   }
+  .comment-form button:hover { background: #333; transform: scale(1.05); }
 
+  /* ── Create Post FAB ── */
   .create-post-btn {
     position: fixed; bottom: clamp(20px, 4vh, 32px); left: 50%;
     transform: translateX(-50%); z-index: 500;
     font-weight: 600; text-decoration: none; color: #fff; background: #111;
-    padding: 12px 28px; border-radius: 50px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.18);
+    padding: 13px 28px; border-radius: 50px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
     transition: all 0.25s ease; white-space: nowrap; font-size: 14px;
+    display: flex; align-items: center; gap: 8px;
   }
   .create-post-btn:hover {
     transform: translateX(-50%) translateY(-3px);
-    box-shadow: 0 8px 28px rgba(0,0,0,0.25); color: #fff; background: #222;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4); color: #fff; background: #222;
   }
 
+  /* ── Friend requests box ── */
   .friend-requests-box {
-    background: #fff; border: 1px solid #ececec;
-    border-radius: 16px; padding: 16px; margin-bottom: 24px;
-    box-shadow: 0 1px 8px rgba(0,0,0,0.05);
+    background: rgba(255,255,255,0.95);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 18px; padding: 16px; margin-bottom: 18px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.12);
+    animation: slideDown 0.35s cubic-bezier(0.22,1,0.36,1);
+  }
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .friend-requests-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 12px;
   }
   .friend-requests-box h3 {
-    font-size: 14px; font-weight: 600; color: #111;
-    margin-bottom: 12px; display: flex; align-items: center; gap: 8px;
+    font-size: 13px; font-weight: 700; color: #111;
+    display: flex; align-items: center; gap: 8px; margin: 0;
+    text-transform: uppercase; letter-spacing: 0.5px;
   }
+  .fr-close-btn {
+    background: none; border: none;
+    color: #bbb; font-size: 14px; cursor: pointer;
+    width: 28px; height: 28px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+  }
+  .fr-close-btn:hover { background: #f0f0f0; color: #555; }
+
   .friend-request-item {
     display: flex; align-items: center; justify-content: space-between;
     padding: 10px 0; border-bottom: 1px solid #f5f5f5;
@@ -123,74 +166,149 @@
   .friend-request-name { font-size: 14px; font-weight: 600; color: #111 !important; }
   .friend-request-actions { display: flex; gap: 8px; }
   .friend-accept-btn, .friend-decline-btn {
-    border: none; border-radius: 8px; padding: 6px 12px;
+    border: none; border-radius: 20px; padding: 6px 14px;
     font-size: 12px; font-weight: 600; cursor: pointer;
+    transition: all 0.2s;
   }
   .friend-accept-btn { background: #111; color: #fff !important; }
-  .friend-decline-btn { background: #f5f5f5; color: #666 !important; }
+  .friend-accept-btn:hover { background: #333; }
+  .friend-decline-btn { background: #f0f0f0; color: #666 !important; }
+  .friend-decline-btn:hover { background: #e0e0e0; }
 
-  /* Specific overrides to fix white-on-white text issues caused by global base.html rules */
-  body:not(.auth-page):not(.messaging-mode) .friend-requests-box h3 {
+  /* ── Suggestions popup ── */
+  .suggestions-popup-trigger {
+    display: none; /* shown via JS if suggested_users exist */
+  }
+
+  /* floating popup */
+  .suggestions-popup {
+    position: fixed;
+    bottom: clamp(80px, 12vh, 100px);
+    right: calc(var(--dm-w) + 14px);
+    width: 280px;
+    background: rgba(255,255,255,0.97);
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 18px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.22), 0 2px 8px rgba(0,0,0,0.08);
+    z-index: 600;
+    overflow: hidden;
+    animation: popupIn 0.35s cubic-bezier(0.22,1,0.36,1) both;
+    transform-origin: bottom right;
+  }
+  @keyframes popupIn {
+    from { opacity: 0; transform: scale(0.88) translateY(12px); }
+    to   { opacity: 1; transform: scale(1)    translateY(0); }
+  }
+  .suggestions-popup.hiding {
+    animation: popupOut 0.25s ease forwards;
+  }
+  @keyframes popupOut {
+    to { opacity: 0; transform: scale(0.9) translateY(8px); }
+  }
+
+  .suggestions-popup-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 14px 10px;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  .suggestions-popup-title {
+    font-size: 11px; font-weight: 700; color: #888;
+    text-transform: uppercase; letter-spacing: 0.8px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .suggestions-popup-close {
+    background: none; border: none; cursor: pointer;
+    width: 24px; height: 24px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: #bbb; font-size: 13px; transition: all 0.18s;
+    flex-shrink: 0;
+  }
+  .suggestions-popup-close:hover { background: #f0f0f0; color: #555; }
+
+  .suggestions-popup-body { padding: 6px 0; }
+
+  .suggestion-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 14px; transition: background 0.15s;
+  }
+  .suggestion-row:hover { background: #f9f9f9; }
+  .suggestion-av {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: #111; display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700; color: #fff; flex-shrink: 0; overflow: hidden;
+  }
+  .suggestion-av img { width:100%; height:100%; object-fit:cover; }
+  .suggestion-info { flex: 1; min-width: 0; }
+  .suggestion-uname {
+    font-size: 13px; font-weight: 600; color: #111;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .suggestion-posts { font-size: 11px; color: #aaa; }
+  .sugg-add-btn {
+    background: #111; color: #fff !important; border: none;
+    border-radius: 16px; padding: 5px 12px; font-size: 12px; font-weight: 600;
+    cursor: pointer; transition: all 0.2s; white-space: nowrap;
+    font-family: 'Poppins', sans-serif; flex-shrink: 0;
+  }
+  .sugg-add-btn:hover { background: #333; }
+  .sugg-add-btn:disabled { background: #e8e8e8; color: #999 !important; cursor: default; }
+
+  /* ── Color overrides (white-on-white fix) ── */
+  body:not(.auth-page):not(.messaging-mode) .friend-requests-box,
+  body:not(.auth-page):not(.messaging-mode) .suggestions-widget,
+  body:not(.auth-page):not(.messaging-mode) .card,
+  body:not(.auth-page):not(.messaging-mode) .card-header,
+  body:not(.auth-page):not(.messaging-mode) .card-body {
     color: #111 !important;
   }
-  body:not(.auth-page):not(.messaging-mode) .friend-request-name {
-    color: #111 !important;
-  }
-  body:not(.auth-page):not(.messaging-mode) .friend-accept-btn {
-    color: #fff !important;
-  }
-  body:not(.auth-page):not(.messaging-mode) .friend-decline-btn {
-    color: #666 !important;
-  }
-  body:not(.auth-page):not(.messaging-mode) .card-header a {
-    color: #111 !important;
-  }
-  body:not(.auth-page):not(.messaging-mode) .card-header a:hover {
-    color: #444 !important;
-  }
-  body:not(.auth-page):not(.messaging-mode) .card-text {
-    color: #222 !important;
-  }
-  body:not(.auth-page):not(.messaging-mode) .like-count {
-    color: #aaa !important;
-  }
-  body:not(.auth-page):not(.messaging-mode) .like-icon {
-    color: #ccc !important;
-  }
-  body:not(.auth-page):not(.messaging-mode) .fas.fa-thumbs-up.like-icon {
-    color: #111 !important;
-  }
-  body:not(.auth-page):not(.messaging-mode) .view-comments-btn {
-    color: #aaa !important;
-  }
-  body:not(.auth-page):not(.messaging-mode) .view-comments-btn:hover {
-    color: #555 !important;
-  }
-  body:not(.auth-page):not(.messaging-mode) .comment-item {
-    color: #444 !important;
-  }
-  body:not(.auth-page):not(.messaging-mode) .comment-item a {
-    color: #111 !important;
-  }
-  body:not(.auth-page):not(.messaging-mode) .comment-item span {
-    color: #444 !important;
-  }
-  body:not(.auth-page):not(.messaging-mode) .comment-form input {
-    color: #111 !important;
-  }
+  body:not(.auth-page):not(.messaging-mode) .friend-requests-box h3 { color: #111 !important; }
+  body:not(.auth-page):not(.messaging-mode) .friend-request-name { color: #111 !important; }
+  body:not(.auth-page):not(.messaging-mode) .friend-accept-btn { color: #fff !important; }
+  body:not(.auth-page):not(.messaging-mode) .friend-decline-btn { color: #666 !important; }
+  body:not(.auth-page):not(.messaging-mode) .fr-close-btn { color: #bbb !important; font-weight: 400 !important; }
+  body:not(.auth-page):not(.messaging-mode) .card-header a { color: #111 !important; }
+  body:not(.auth-page):not(.messaging-mode) .card-header a:hover { color: #444 !important; }
+  body:not(.auth-page):not(.messaging-mode) .card-text { color: #1a1a1a !important; }
+  body:not(.auth-page):not(.messaging-mode) .post-date-row { color: #bbb !important; font-weight: 400 !important; }
+  body:not(.auth-page):not(.messaging-mode) .like-count { color: #aaa !important; }
+  body:not(.auth-page):not(.messaging-mode) .like-icon { color: #ccc !important; }
+  body:not(.auth-page):not(.messaging-mode) .fas.fa-thumbs-up.like-icon { color: #111 !important; }
+  body:not(.auth-page):not(.messaging-mode) .view-comments-btn { color: #aaa !important; font-weight: 500 !important; }
+  body:not(.auth-page):not(.messaging-mode) .view-comments-btn:hover { color: #555 !important; }
+  body:not(.auth-page):not(.messaging-mode) .comment-item { color: #444 !important; }
+  body:not(.auth-page):not(.messaging-mode) .comment-item a { color: #111 !important; }
+  body:not(.auth-page):not(.messaging-mode) .comment-item span { color: #444 !important; }
+  body:not(.auth-page):not(.messaging-mode) .comment-form input { color: #111 !important; }
+  body:not(.auth-page):not(.messaging-mode) .suggestion-uname { color: #111 !important; }
+  body:not(.auth-page):not(.messaging-mode) .suggestion-posts { color: #aaa !important; font-weight: 400 !important; }
+  body:not(.auth-page):not(.messaging-mode) .suggestions-popup-title { color: #888 !important; font-weight: 700 !important; }
+  body:not(.auth-page):not(.messaging-mode) .feed-header p { color: rgba(255,255,255,0.45) !important; font-weight: 400 !important; }
+  body:not(.auth-page):not(.messaging-mode) .sugg-add-btn,
+  body:not(.auth-page):not(.messaging-mode) .sugg-add-btn i { color: #fff !important; font-weight: 600 !important; }
+  body:not(.auth-page):not(.messaging-mode) .sugg-add-btn:disabled { color: #999 !important; }
+  body:not(.auth-page):not(.messaging-mode) .suggestions-popup-close { color: #bbb !important; font-weight: 400 !important; }
+  body:not(.auth-page):not(.messaging-mode) .suggestions-popup { color: #111 !important; }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="home-layout">
+
+  <!-- Header -->
   <div class="feed-header">
-    <h1>G~Hues</h1>
+    <h1><img src="{{ url_for('static', filename='home-logo.png') }}" alt="This is WAter."
+             style="height:auto; max-height:68px; width:auto; max-width:min(480px,90%); display:block; margin:0 auto;
+                    filter:drop-shadow(0 2px 10px rgba(0,0,0,0.22));"></h1>
     <p>what's happening in your world</p>
   </div>
 
+  <!-- Friend requests box -->
   {% if incoming_requests %}
   <div class="friend-requests-box" id="friendRequestsBox">
-    <h3><i class="fas fa-user-plus"></i> Friend Requests</h3>
+    <div class="friend-requests-header">
+      <h3><i class="fas fa-user-plus"></i> Friend Requests <span style="background:#111;color:#fff;border-radius:20px;padding:1px 8px;font-size:11px;">{{ incoming_requests|length }}</span></h3>
+      <button class="fr-close-btn" onclick="dismissFriendRequestsBox()" title="Dismiss"><i class="fas fa-times"></i></button>
+    </div>
     {% for req in incoming_requests %}
     <div class="friend-request-item" id="friend-req-{{ req.id }}">
       <div class="friend-request-user">
@@ -206,73 +324,78 @@
   </div>
   {% endif %}
 
+  <!-- Posts feed -->
   <div id="posts">
-      {% for post in posts %}
-      <div class="card">
-        <div class="card-header">
-          <a href="/posts/{{ post.user.username }}">
-            <div class="user-avatar-sm">
-              {% if post.user.profile_pic %}
-              <img src="{{ url_for('static', filename=post.user.profile_pic) }}" alt="">
-              {% else %}
-              {{ post.user.username[0] | upper }}
-              {% endif %}
-            </div>
-            {{ post.user.username }}
-          </a>
-          <div class="like-area">
-            <span class="like-count" id="likes-count-{{ post.id }}">{{ post.likes | length }}</span>
-            <i class="{{ 'fas' if user.id in post.likes | map(attribute='author') | list else 'far' }} fa-thumbs-up like-icon"
-               id="like-button-{{ post.id }}"
-               onclick="like({{ post.id }})"></i>
-            {% if user.id == post.author or user.username == "Abiram" %}
-            <div class="btn-group ms-2">
+    {% for post in posts %}
+    <div class="card">
+      <div class="card-header">
+        <a href="/posts/{{ post.user.username }}">
+          <div class="user-avatar-sm">
+            {% if post.user.profile_pic %}
+            <img src="{{ url_for('static', filename=post.user.profile_pic) }}" alt="">
+            {% else %}
+            {{ post.user.username[0] | upper }}
+            {% endif %}
+          </div>
+          {{ post.user.username }}
+        </a>
+        <div class="like-area">
+          <span class="like-count" id="likes-count-{{ post.id }}">{{ post.likes | length }}</span>
+          <i class="{{ 'fas' if user.id in post.likes | map(attribute='author') | list else 'far' }} fa-thumbs-up like-icon"
+             id="like-button-{{ post.id }}"
+             onclick="like({{ post.id }})"></i>
+          {% if user.id == post.author or user.username == "Abiram" %}
+          <div class="btn-group ms-2">
+            <button type="button" class="btn btn-sm dropdown-toggle" data-bs-toggle="dropdown"></button>
+            <ul class="dropdown-menu dropdown-menu-end">
+              <li><a href="/delete-post/{{ post.id }}" class="dropdown-item text-danger"><i class="fas fa-trash" style="margin-right:6px;"></i>Delete</a></li>
+            </ul>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      <div class="card-body">
+        {% if post.date_created %}
+        <div class="post-date-row"><i class="far fa-clock"></i> {{ post.date_created.strftime('%b %d, %Y') }}</div>
+        {% endif %}
+        <div class="card-text">{{ post.text }}</div>
+        <div class="collapse comment-container" id="comments-{{ post.id }}">
+          {% for comment in post.comments %}
+          <div class="d-flex justify-content-between align-items-center comment-item">
+            <div><a href="/posts/{{ comment.user.username }}">{{ comment.user.username }}</a>: {{ comment.text }}</div>
+            {% if user.id == comment.author or user.id == post.author or user.username == "Abiram" %}
+            <div class="btn-group">
               <button type="button" class="btn btn-sm dropdown-toggle" data-bs-toggle="dropdown"></button>
               <ul class="dropdown-menu dropdown-menu-end">
-                <li><a href="/delete-post/{{ post.id }}" class="dropdown-item text-danger"><i class="fas fa-trash" style="margin-right:6px;"></i>Delete</a></li>
+                <li><a href="/delete-comment/{{ comment.id }}" class="dropdown-item text-danger"><i class="fas fa-trash"></i> Delete</a></li>
               </ul>
             </div>
             {% endif %}
           </div>
+          {% endfor %}
         </div>
-        <div class="card-body">
-          <div class="card-text">{{ post.text }}</div>
-          <div class="collapse comment-container" id="comments-{{ post.id }}">
-            {% for comment in post.comments %}
-            <div class="d-flex justify-content-between align-items-center comment-item">
-              <div><a href="/posts/{{ comment.user.username }}">{{ comment.user.username }}</a>: {{ comment.text }}</div>
-              {% if user.id == comment.author or user.id == post.author or user.username == "Abiram" %}
-              <div class="btn-group">
-                <button type="button" class="btn btn-sm dropdown-toggle" data-bs-toggle="dropdown"></button>
-                <ul class="dropdown-menu dropdown-menu-end">
-                  <li><a href="/delete-comment/{{ comment.id }}" class="dropdown-item text-danger"><i class="fas fa-trash" style="margin-right:6px;"></i>Delete</a></li>
-                </ul>
-              </div>
-              {% endif %}
-            </div>
-            {% endfor %}
-          </div>
-          <p class="card-text mt-2">
-            {% if post.comments | length > 0 %}
-            <a class="view-comments-btn" data-bs-toggle="collapse" href="#comments-{{ post.id }}" role="button">
-              <i class="fas fa-comments"></i> View {{ post.comments | length }} comment{{ 's' if post.comments | length > 1 }}
-            </a>
-            {% else %}
-            <small style="color:#ccc; font-size:12px;"><i class="far fa-comment"></i> No comments yet</small>
-            {% endif %}
-          </p>
-          <form class="comment-form" method="POST" action="/create-comment/{{ post.id }}">
-            <input type="text" name="text" placeholder="Write a comment..." />
-            <button type="submit"><i class="fas fa-paper-plane"></i></button>
-          </form>
-        </div>
+        <p class="card-text mt-2">
+          {% if post.comments | length > 0 %}
+          <a class="view-comments-btn" data-bs-toggle="collapse" href="#comments-{{ post.id }}" role="button">
+            <i class="fas fa-comments"></i> {{ post.comments | length }} comment{{ 's' if post.comments | length > 1 }}
+          </a>
+          {% else %}
+          <small style="color:#ccc; font-size:12px; font-weight:400;"><i class="far fa-comment"></i> No comments yet</small>
+          {% endif %}
+        </p>
+        <form class="comment-form" method="POST" action="/create-comment/{{ post.id }}">
+          <input type="text" name="text" placeholder="Write a comment..." />
+          <button type="submit"><i class="fas fa-paper-plane"></i></button>
+        </form>
       </div>
-      {% endfor %}
     </div>
+    {% endfor %}
   </div>
 
+</div>
+
 <a href="/create-post" class="create-post-btn">
-  <i class="fas fa-plus" style="margin-right:8px;"></i>Create a Post
+  <i class="fas fa-plus"></i>Create a Post
 </a>
 {% endblock %}
 
@@ -288,5 +411,89 @@
         count.textContent = data.likes;
       });
   }
+
+  function dismissFriendRequestsBox() {
+    var box = document.getElementById('friendRequestsBox');
+    if (box) {
+      box.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+      box.style.opacity = '0';
+      box.style.transform = 'translateY(-8px)';
+      setTimeout(function() { box.remove(); }, 300);
+    }
+  }
+
+  function closeSuggestionsPopup() {
+    var widget = document.getElementById('suggestionsWidget');
+    if (widget) {
+      widget.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+      widget.style.opacity = '0';
+      widget.style.transform = 'translateY(-8px)';
+      setTimeout(function() { widget.remove(); }, 300);
+    }
+  }
+
+  function sendFeedSuggRequest(userId, username) {
+    var btn = document.getElementById('sugg-feed-btn-' + userId);
+    if (!btn || btn.disabled) return;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right:4px;"></i>...';
+    fetch('/api/friend-request/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: userId })
+    }).then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
+      .then(function(res) {
+        if (!res.ok) {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fas fa-user-plus" style="margin-right:4px;"></i>Add';
+          return;
+        }
+        btn.innerHTML = '<i class="fas fa-check" style="margin-right:4px;"></i>Sent!';
+        btn.style.background = '#555';
+        // Fade out the row after a moment
+        setTimeout(function() {
+          var row = document.getElementById('sugg-row-' + userId);
+          if (row) {
+            row.style.transition = 'opacity 0.4s ease';
+            row.style.opacity = '0';
+            setTimeout(function() {
+              row.remove();
+              // If no more suggestion rows, hide the widget
+              var widget = document.getElementById('suggestionsWidget');
+              if (widget && !widget.querySelector('.suggestion-row')) widget.remove();
+            }, 400);
+          }
+        }, 1200);
+      });
+  }
+
+  /* ── Scroll GradualBlur ── */
+  (function () {
+    if (typeof GradualBlurScroll === 'undefined') return;
+    if (document.body.classList.contains('auth-page')) return;
+
+    var blurScroll = new GradualBlurScroll({
+      strength:     3,
+      height:       '10rem',
+      divCount:     8,
+      exponential:  true,
+      curve:        'bezier',
+      opacity:      1,
+      zIndex:       890,
+      fadeStart:    20,
+      fadeEnd:      140,
+      showTopAfter: 90,
+    });
+
+    /* hide overlays while DM is open */
+    var observer = new MutationObserver(function () {
+      var inDM = document.body.classList.contains('messaging-mode');
+      blurScroll._overlays.forEach(function (el) {
+        el.style.display = inDM ? 'none' : '';
+      });
+      if (!inDM) blurScroll._onScroll();
+    });
+    observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+  })();
 </script>
 {% endblock %}

@@ -1,0 +1,69 @@
+{% extends "admin/base.html" %}
+{% block title %}Comments{% endblock %}
+{% block page_title %}All Comments{% endblock %}
+{% block content %}
+<div class="admin-table-wrap">
+  <div class="admin-table-header">
+    <h2><i class="fas fa-comments" style="margin-right:8px;color:var(--accent);"></i>
+      Comments <span style="color:var(--muted);font-weight:400;font-size:13px;">({{ pagination.total }})</span>
+    </h2>
+    <form class="search-form" method="GET">
+      <input name="q" value="{{ q }}" placeholder="Search comment text…"/>
+      <button class="btn-admin btn-primary" type="submit"><i class="fas fa-search"></i></button>
+      {% if q %}<a href="{{ url_for('admin.comments') }}" class="btn-admin btn-secondary">Clear</a>{% endif %}
+    </form>
+  </div>
+  <table class="admin-table">
+    <thead>
+      <tr><th>ID</th><th>Author</th><th>On Post by</th><th>Comment</th><th>Date</th><th>Delete</th></tr>
+    </thead>
+    <tbody>
+      {% for c in pagination.items %}
+      <tr>
+        <td style="color:var(--muted);font-size:12px;">#{{ c.id }}</td>
+        <td>
+          <a href="{{ url_for('admin.user_detail', uid=c.author) }}" style="color:var(--accent);font-weight:600;text-decoration:none;">
+            {{ c.user.username }}
+          </a>
+        </td>
+        <td style="font-size:13px;color:var(--muted);">
+          <a href="{{ url_for('admin.user_detail', uid=c.post.author) }}" style="color:var(--muted);text-decoration:none;">
+            {{ c.post.user.username }}
+          </a>
+        </td>
+        <td style="max-width:340px;font-size:13px;">{{ c.text }}</td>
+        <td style="font-size:12px;color:var(--muted);white-space:nowrap;">
+          {{ c.date_created.strftime('%b %d, %Y') if c.date_created else '—' }}
+        </td>
+        <td>
+          <form method="POST" action="{{ url_for('admin.comment_delete', cid=c.id) }}"
+                onsubmit="return confirm('Delete this comment?')">
+            <button class="btn-admin btn-danger" style="font-size:11px;padding:5px 10px;" type="submit">
+              <i class="fas fa-trash"></i>
+            </button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" style="text-align:center;color:var(--muted);padding:28px;">No comments found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% if pagination.pages > 1 %}
+  <div class="pagination-wrap">
+    <small>Page {{ pagination.page }} of {{ pagination.pages }} — {{ pagination.total }} total</small>
+    <div class="pag-btns">
+      <a class="pag-btn {% if not pagination.has_prev %}disabled{% endif %}"
+         href="{{ url_for('admin.comments', page=pagination.prev_num, q=q) }}">← Prev</a>
+      {% for p in pagination.iter_pages() %}
+        {% if p %}<a class="pag-btn {% if p == pagination.page %}active{% endif %}"
+           href="{{ url_for('admin.comments', page=p, q=q) }}">{{ p }}</a>
+        {% else %}<span class="pag-btn disabled">…</span>{% endif %}
+      {% endfor %}
+      <a class="pag-btn {% if not pagination.has_next %}disabled{% endif %}"
+         href="{{ url_for('admin.comments', page=pagination.next_num, q=q) }}">Next →</a>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

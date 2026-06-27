@@ -1,7 +1,8 @@
 from website import create_app
 import os
 
+app = create_app()
+
 if __name__ == "__main__":
-    app = create_app()
-    debug_mode = os.getenv('FLASK_DEBUG', 'True').lower() == 'true'
+    debug_mode = os.getenv('FLASK_DEBUG', 'False').lower() == 'true'
     app.run(debug=debug_mode)
