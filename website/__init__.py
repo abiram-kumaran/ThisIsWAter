@@ -23,29 +23,38 @@ def create_database(app):
 
         db.create_all()
 
-        inspector = inspect(db.engine)
-        if 'user' in inspector.get_table_names():
-            columns = {col['name'] for col in inspector.get_columns('user')}
-            if 'bio' not in columns:
-                db.session.execute(text("ALTER TABLE user ADD COLUMN bio VARCHAR(500) DEFAULT ''"))
-                db.session.commit()
-                print("Added bio column to user table")
-            if 'profile_pic' not in columns:
-                db.session.execute(text("ALTER TABLE user ADD COLUMN profile_pic VARCHAR(300) DEFAULT ''"))
-                db.session.commit()
-                print("Added profile_pic column to user table")
-
-        if 'message' in inspector.get_table_names():
-            msg_columns = {col['name'] for col in inspector.get_columns('message')}
-            if 'image_path' not in msg_columns:
-                db.session.execute(text("ALTER TABLE message ADD COLUMN image_path VARCHAR(300) DEFAULT ''"))
-                db.session.commit()
-                print("Added image_path column to message table")
+        # SQLite-only migrations (skipped on PostgreSQL — columns already defined in models)
+        db_url = app.config.get("SQLALCHEMY_DATABASE_URI", "")
+        if "sqlite" in db_url:
+            inspector = inspect(db.engine)
+            if 'user' in inspector.get_table_names():
+                columns = {col['name'] for col in inspector.get_columns('user')}
+                if 'bio' not in columns:
+                    db.session.execute(text("ALTER TABLE user ADD COLUMN bio VARCHAR(500) DEFAULT ''"))
+                    db.session.commit()
+                if 'profile_pic' not in columns:
+                    db.session.execute(text("ALTER TABLE user ADD COLUMN profile_pic VARCHAR(300) DEFAULT ''"))
+                    db.session.commit()
+            if 'message' in inspector.get_table_names():
+                msg_columns = {col['name'] for col in inspector.get_columns('message')}
+                if 'image_path' not in msg_columns:
+                    db.session.execute(text("ALTER TABLE message ADD COLUMN image_path VARCHAR(300) DEFAULT ''"))
+                    db.session.commit()
 
 
 def create_app():
     app = Flask(__name__)
-    app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL", f"sqlite:///{DB_NAME}")
+
+    # Fix Neon/Heroku-style postgres:// → postgresql:// (SQLAlchemy 2.x requirement)
+    raw_db_url = os.getenv("DATABASE_URL", f"sqlite:///{DB_NAME}")
+    if raw_db_url.startswith("postgres://"):
+        raw_db_url = raw_db_url.replace("postgres://", "postgresql://", 1)
+
+    app.config["SQLALCHEMY_DATABASE_URI"] = raw_db_url
+    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+        "pool_pre_ping": True,
+        "pool_recycle": 300,
+    }
     app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev-secret-key-change-in-production")
 
     # Mail Configuration
