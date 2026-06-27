@@ -30,10 +30,10 @@
   .auth-logo {
     text-align: center; margin-bottom: 8px;
     font-size: clamp(28px, 5vw, 36px); font-weight: 700;
-    color: #ffffff; letter-spacing: 2px;
+    color: #111111; letter-spacing: 3px;
     animation: fadeDown 0.6s 1.25s ease both;
   }
-  .auth-logo .water-highlight { color: #FFD600; font-weight: 700; }
+  .auth-logo span { color: rgba(0,0,0,0.35); }
   .auth-subtitle {
     text-align: center; font-size: 13px;
     color: rgba(0,0,0,0.45); margin-bottom: 32px;
@@ -105,7 +105,7 @@
 {% block content %}
 <div class="auth-scene">
   <div class="auth-card">
-    <div class="auth-logo">This is <span class="water-highlight">WAter</span>.</div>
+    <div class="auth-logo">G<span>~</span>Hues</div>
     <p class="auth-subtitle">Welcome back</p>
 
     <form method="POST" action="{{ url_for('auth.login') }}">
