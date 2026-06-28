@@ -20,7 +20,7 @@
       <div style="text-align:center;margin-bottom:20px;">
         <div class="avatar-sm" style="width:72px;height:72px;font-size:28px;margin:0 auto 10px;">
           {% if u.profile_pic %}
-          <img src="{{ url_for('static', filename=u.profile_pic) }}" alt="">
+          <img src="{{ pic_url(u.profile_pic) }}" alt="">
           {% else %}{{ u.username[0]|upper }}{% endif %}
         </div>
         <div style="font-weight:700;font-size:16px;color:#fff;">{{ u.username }}</div>
@@ -106,7 +106,7 @@
            style="display:flex;align-items:center;gap:8px;background:var(--surface2);border-radius:10px;
                   padding:7px 12px;text-decoration:none;font-size:13px;color:var(--text);">
           <div class="avatar-sm" style="width:26px;height:26px;font-size:11px;">
-            {% if f.profile_pic %}<img src="{{ url_for('static', filename=f.profile_pic) }}" alt="">
+            {% if f.profile_pic %}<img src="{{ pic_url(f.profile_pic) }}" alt="">
             {% else %}{{ f.username[0]|upper }}{% endif %}
           </div>
           {{ f.username }}

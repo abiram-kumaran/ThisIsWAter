@@ -103,6 +103,19 @@ def create_app():
     def load_user(user_id):
         return db.session.get(User, int(user_id))
 
+    @app.template_global()
+    def pic_url(path_or_url):
+        """Return a displayable image URL — works for both local paths and Cloudinary URLs."""
+        if not path_or_url:
+            return ''
+        if path_or_url.startswith('http'):
+            return path_or_url
+        try:
+            from flask import url_for as _url_for
+            return _url_for('static', filename=path_or_url)
+        except Exception:
+            return path_or_url
+
     @app.context_processor
     def inject_globals():
         from flask_login import current_user

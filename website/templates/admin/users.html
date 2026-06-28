@@ -30,7 +30,7 @@
           <div style="display:flex;align-items:center;gap:10px;">
             <div class="avatar-sm">
               {% if u.profile_pic %}
-              <img src="{{ url_for('static', filename=u.profile_pic) }}" alt="">
+              <img src="{{ pic_url(u.profile_pic) }}" alt="">
               {% else %}{{ u.username[0]|upper }}{% endif %}
             </div>
             <div>

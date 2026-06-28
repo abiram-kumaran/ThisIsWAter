@@ -6,19 +6,70 @@ from werkzeug.utils import secure_filename
 import os
 import uuid
 
-views = Blueprint("views", __name__)
+# ── Cloudinary (optional — used on Vercel where filesystem is read-only) ──────
+try:
+    import cloudinary
+    import cloudinary.uploader
+    _CLOUDINARY_URL = os.getenv('CLOUDINARY_URL', '')
+    if _CLOUDINARY_URL:
+        cloudinary.config(cloudinary_url=_CLOUDINARY_URL)
+        USE_CLOUDINARY = True
+    else:
+        USE_CLOUDINARY = False
+except ImportError:
+    USE_CLOUDINARY = False
 
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+
+def _upload_file(file, folder: str, public_id: str = None) -> str:
+    """Upload a file. Returns a URL (Cloudinary) or a static path (local).
+    `folder` = 'profiles' | 'dm'
+    """
+    if USE_CLOUDINARY:
+        opts = {'folder': f'thisisswater/{folder}', 'resource_type': 'auto'}
+        if public_id:
+            opts['public_id'] = public_id
+        result = cloudinary.uploader.upload(file, **opts)
+        return result['secure_url']
+    else:
+        # Local dev: save to static/uploads/<folder>/
+        ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else 'bin'
+        filename = f"{public_id or uuid.uuid4().hex[:12]}.{ext}"
+        upload_dir = os.path.join(current_app.root_path, 'static', 'uploads', folder)
+        os.makedirs(upload_dir, exist_ok=True)
+        file.save(os.path.join(upload_dir, filename))
+        return f'uploads/{folder}/{filename}'
 
 
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+def _delete_file(path_or_url: str):
+    """Delete an uploaded file (local path or Cloudinary public_id)."""
+    if not path_or_url:
+        return
+    if USE_CLOUDINARY and path_or_url.startswith('http'):
+        try:
+            # Extract public_id from URL: .../thisisswater/profiles/<id>.<ext>
+            parts = path_or_url.rsplit('/', 1)[-1].rsplit('.', 1)[0]
+            folder = 'profiles' if 'profiles' in path_or_url else 'dm'
+            cloudinary.uploader.destroy(f'thisisswater/{folder}/{parts}')
+        except Exception:
+            pass
+    else:
+        # Local path like 'uploads/profiles/xxx.jpg'
+        abs_path = os.path.join(current_app.root_path, 'static', path_or_url)
+        if os.path.exists(abs_path):
+            os.remove(abs_path)
 
 
 def profile_pic_url(user):
     if user.profile_pic:
+        # Cloudinary URLs are full https:// URLs; local paths need url_for
+        if user.profile_pic.startswith('http'):
+            return user.profile_pic
         return url_for('static', filename=user.profile_pic)
     return None
+
+
+views = Blueprint("views", __name__)
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 
 
 def get_friend_status(viewer_id, target_id):
@@ -193,6 +244,11 @@ def update_username():
     db.session.commit()
     return jsonify({'message': f'Username changed from "{old_username}" to "{new_username}".',
                     'new_username': new_username})
+
+
+@views.route("/api/search")
+@login_required
+def search_users():
     query = request.args.get('q', '').strip()
     if not query:
         return jsonify({'found': False, 'error': 'Enter a username to search.'}), 400
@@ -502,33 +558,31 @@ def upload_profile_picture():
     if not allowed_file(file.filename):
         return jsonify({'error': 'Invalid file type. Use PNG, JPG, GIF, or WEBP.'}), 400
 
-    ext = file.filename.rsplit('.', 1)[1].lower()
-    filename = f"{current_user.id}_{uuid.uuid4().hex[:8]}.{ext}"
-    upload_dir = os.path.join(current_app.root_path, 'static', 'uploads', 'profiles')
-    os.makedirs(upload_dir, exist_ok=True)
-
+    # Delete old picture first
     if current_user.profile_pic:
-        old_path = os.path.join(current_app.root_path, 'static', current_user.profile_pic)
-        if os.path.exists(old_path):
-            os.remove(old_path)
+        _delete_file(current_user.profile_pic)
 
-    file.save(os.path.join(upload_dir, filename))
-    current_user.profile_pic = f'uploads/profiles/{filename}'
+    public_id = f"user_{current_user.id}_{uuid.uuid4().hex[:8]}"
+    try:
+        result = _upload_file(file, folder='profiles', public_id=public_id)
+    except Exception as e:
+        return jsonify({'error': f'Upload failed: {str(e)}'}), 500
+
+    current_user.profile_pic = result  # full URL (Cloudinary) or relative path (local)
     db.session.commit()
 
-    return jsonify({'profile_pic': url_for('static', filename=current_user.profile_pic)})
+    # Return the URL to display
+    pic_url = result if result.startswith('http') else url_for('static', filename=result)
+    return jsonify({'profile_pic': pic_url})
 
 
 @views.route("/api/profile-picture", methods=['DELETE'])
 @login_required
 def delete_profile_picture():
     if current_user.profile_pic:
-        old_path = os.path.join(current_app.root_path, 'static', current_user.profile_pic)
-        if os.path.exists(old_path):
-            os.remove(old_path)
+        _delete_file(current_user.profile_pic)
         current_user.profile_pic = ''
         db.session.commit()
-
     return jsonify({'message': 'Profile picture removed.'})
 
 

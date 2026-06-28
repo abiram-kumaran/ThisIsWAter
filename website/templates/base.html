@@ -1320,7 +1320,7 @@
         <span class="dock-icon">
           <div class="nav-profile-avatar">
             {% if current_user.profile_pic %}
-            <img src="{{ url_for('static', filename=current_user.profile_pic) }}" alt="">
+            <img src="{{ pic_url(current_user.profile_pic) }}" alt="">
             {% else %}
             {{ current_user.username[0] | upper }}
             {% endif %}
@@ -1353,10 +1353,10 @@
     <div class="dm-rail-divider"></div>
     {% for u in all_users %}
     <div class="dm-rail-avatar" id="dm-rail-{{ u.username }}" data-username="{{ u.username }}"
-      data-pic="{{ url_for('static', filename=u.profile_pic) if u.profile_pic else '' }}"
+      data-pic="{{ pic_url(u.profile_pic) }}"
       onclick="openDMChat('{{ u.username }}', event)">
       {% if u.profile_pic %}
-      <img src="{{ url_for('static', filename=u.profile_pic) }}" alt="">
+      <img src="{{ pic_url(u.profile_pic) }}" alt="">
       {% else %}
       {{ u.username[0] | upper }}
       {% endif %}
@@ -1394,7 +1394,7 @@
                           display:flex;align-items:center;justify-content:center;font-size:13px;
                           font-weight:700;color:#fff;overflow:hidden;flex-shrink:0;">
                 {% if su.profile_pic %}
-                <img src="{{ url_for('static', filename=su.profile_pic) }}" alt=""
+                <img src="{{ pic_url(su.profile_pic) }}" alt=""
                      style="width:100%;height:100%;object-fit:cover;">
                 {% else %}{{ su.username[0]|upper }}{% endif %}
               </div>
@@ -1418,11 +1418,11 @@
         <div class="dm-user-list" id="dmUserList">
           {% for u in all_users %}
           <div class="dm-user-item" id="dm-user-{{ u.username }}" data-username="{{ u.username }}"
-            data-pic="{{ url_for('static', filename=u.profile_pic) if u.profile_pic else '' }}"
+            data-pic="{{ pic_url(u.profile_pic) }}"
             onclick="openDMChat('{{ u.username }}', event)">
             <div class="dm-user-item-avatar">
               {% if u.profile_pic %}
-              <img src="{{ url_for('static', filename=u.profile_pic) }}" alt="">
+              <img src="{{ pic_url(u.profile_pic) }}" alt="">
               {% else %}
               {{ u.username[0] | upper }}
               {% endif %}

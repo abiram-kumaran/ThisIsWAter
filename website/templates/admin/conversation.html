@@ -21,7 +21,7 @@
     {% for m in msgs %}
     <div class="msg-row {% if m.sender_id == u1.id %}left{% else %}right{% endif %}">
       <div class="avatar-sm" style="width:28px;height:28px;font-size:11px;flex-shrink:0;">
-        {% if m.sender.profile_pic %}<img src="{{ url_for('static', filename=m.sender.profile_pic) }}" alt="">
+        {% if m.sender.profile_pic %}<img src="{{ pic_url(m.sender.profile_pic) }}" alt="">
         {% else %}{{ m.sender.username[0]|upper }}{% endif %}
       </div>
       <div>

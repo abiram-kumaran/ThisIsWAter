@@ -350,7 +350,7 @@
     <div class="profile-avatar-wrap">
       <div class="profile-avatar" id="profileAvatar">
         {% if profile_user.profile_pic %}
-        <img src="{{ url_for('static', filename=profile_user.profile_pic) }}" alt="" id="avatarImg">
+        <img src="{{ pic_url(profile_user.profile_pic) }}" alt="" id="avatarImg">
         {% else %}
         <span id="avatarInitial">{{ username[0] | upper }}</span>
         {% endif %}
@@ -422,7 +422,7 @@
         <div class="username-badge">
           <div class="user-avatar-sm">
             {% if profile_user.profile_pic %}
-            <img src="{{ url_for('static', filename=profile_user.profile_pic) }}" alt="">
+            <img src="{{ pic_url(profile_user.profile_pic) }}" alt="">
             {% else %}
             {{ username[0] | upper }}
             {% endif %}
