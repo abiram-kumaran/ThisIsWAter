@@ -441,7 +441,7 @@ def get_messages():
         'messages': [{
             'id': m.id,
             'text': m.text or '',
-            'image': url_for('static', filename=m.image_path) if m.image_path else None,
+            'image': (m.image_path if m.image_path.startswith('http') else url_for('static', filename=m.image_path)) if m.image_path else None,
             'from_me': m.sender_id == current_user.id,
             'sender': m.sender.username,
             'time': m.date_created.strftime('%I:%M %p') if m.date_created else ''
@@ -522,23 +522,25 @@ def send_dm_file():
         return jsonify({'error': 'Unsupported file type.'}), 400
 
     ext = file.filename.rsplit('.', 1)[1].lower()
-    filename = f"dm_{current_user.id}_{uuid.uuid4().hex[:10]}.{ext}"
-    upload_dir = os.path.join(current_app.root_path, 'static', 'uploads', 'dm')
-    os.makedirs(upload_dir, exist_ok=True)
-    file.save(os.path.join(upload_dir, filename))
+    public_id = f"dm_{current_user.id}_{uuid.uuid4().hex[:10]}"
+    try:
+        result = _upload_file(file, folder='dm', public_id=public_id)
+    except Exception as e:
+        return jsonify({'error': f'Upload failed: {str(e)}'}), 500
 
-    file_path = f'uploads/dm/{filename}'
+    # result is a full URL (Cloudinary) or relative path (local)
     msg_text = caption if caption else ('[file]' if ext not in IMAGE_EXTENSIONS else '')
     msg = Message(sender_id=current_user.id, receiver_id=receiver.id,
-                  text=msg_text, image_path=file_path)
+                  text=msg_text, image_path=result)
     db.session.add(msg)
     db.session.commit()
 
+    img_url = result if result.startswith('http') else url_for('static', filename=result)
     return jsonify({
         'message': {
             'id': msg.id,
             'text': msg.text,
-            'image': url_for('static', filename=file_path),
+            'image': img_url,
             'from_me': True,
             'sender': current_user.username,
             'time': msg.date_created.strftime('%I:%M %p') if msg.date_created else ''
