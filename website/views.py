@@ -20,23 +20,26 @@ except ImportError:
     USE_CLOUDINARY = False
 
 
-def _upload_file(file, folder: str, public_id: str = None) -> str:
-    """Upload a file. Returns a URL (Cloudinary) or a static path (local).
-    `folder` = 'profiles' | 'dm'
-    """
+def _upload_file(file_or_bytes, folder: str, public_id: str = None) -> str:
+    """Upload a file object or bytes. Returns a URL (Cloudinary) or a static path (local)."""
     if USE_CLOUDINARY:
         opts = {'folder': f'thisisswater/{folder}', 'resource_type': 'auto'}
         if public_id:
             opts['public_id'] = public_id
-        result = cloudinary.uploader.upload(file, **opts)
+        result = cloudinary.uploader.upload(file_or_bytes, **opts)
         return result['secure_url']
     else:
-        # Local dev: save to static/uploads/<folder>/
-        ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else 'bin'
+        # Local dev — file_or_bytes must be a file object with .filename
+        file = file_or_bytes
+        ext = getattr(file, 'filename', 'file.bin').rsplit('.', 1)[-1].lower()
         filename = f"{public_id or uuid.uuid4().hex[:12]}.{ext}"
         upload_dir = os.path.join(current_app.root_path, 'static', 'uploads', folder)
         os.makedirs(upload_dir, exist_ok=True)
-        file.save(os.path.join(upload_dir, filename))
+        if isinstance(file, bytes):
+            with open(os.path.join(upload_dir, filename), 'wb') as f:
+                f.write(file)
+        else:
+            file.save(os.path.join(upload_dir, filename))
         return f'uploads/{folder}/{filename}'
 
 
@@ -524,7 +527,8 @@ def send_dm_file():
     ext = file.filename.rsplit('.', 1)[1].lower()
     public_id = f"dm_{current_user.id}_{uuid.uuid4().hex[:10]}"
     try:
-        result = _upload_file(file, folder='dm', public_id=public_id)
+        file_bytes = file.read()
+        result = _upload_file(file_bytes, folder='dm', public_id=public_id)
     except Exception as e:
         return jsonify({'error': f'Upload failed: {str(e)}'}), 500
 
@@ -566,7 +570,9 @@ def upload_profile_picture():
 
     public_id = f"user_{current_user.id}_{uuid.uuid4().hex[:8]}"
     try:
-        result = _upload_file(file, folder='profiles', public_id=public_id)
+        # Read into bytes so the stream is fresh for Cloudinary
+        file_bytes = file.read()
+        result = _upload_file(file_bytes, folder='profiles', public_id=public_id)
     except Exception as e:
         return jsonify({'error': f'Upload failed: {str(e)}'}), 500
 
