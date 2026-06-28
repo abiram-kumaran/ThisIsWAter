@@ -497,6 +497,26 @@
       color: #fff;
     }
 
+    /* Mobile back button — hidden on desktop */
+    .dm-back-btn {
+      display: none;
+      background: rgba(255,255,255,0.08);
+      border: none;
+      color: rgba(255,255,255,0.7);
+      font-size: 16px;
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      cursor: pointer;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.2s;
+    }
+    .dm-back-btn:hover { background: rgba(255,255,255,0.15); color: #fff; }
+    @media (max-width: 640px) {
+      .dm-back-btn { display: flex; }
+    }
+
     .dm-full-messages {
       flex: 1;
       overflow-y: auto;
@@ -1040,34 +1060,106 @@
 
     @media (max-width: 640px) {
       :root {
-        --nav-w: 64px;
-        --dm-w: 56px;
+        --nav-w: 0px;
+        --dm-w: 0px;
       }
 
-      .dm-rail-label {
-        display: none;
+      .dm-rail-label { display: none; }
+      .dm-rail-avatar .rail-tip { display: none; }
+
+      /* On mobile, dm-backdrop and dm-rail are hidden — use bottom bar instead */
+      .dm-backdrop { display: none; }
+      .dm-rail { display: none; }
+
+      /* Full-screen DM takes full viewport */
+      #dmFullPage {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
       }
 
-      .dm-rail-avatar .rail-tip {
-        display: none;
-      }
-
+      /* Sidebar takes full width on mobile, hidden when chat is open */
       .dm-sidebar {
-        width: min(220px, 45vw);
+        width: 100% !important;
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+        transition: transform 0.3s cubic-bezier(0.22,1,0.36,1);
       }
 
+      /* Chat area takes full width, hidden behind sidebar by default */
+      .dm-chat-area {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        transform: translateX(100%);
+        transition: transform 0.3s cubic-bezier(0.22,1,0.36,1);
+      }
+
+      /* When a chat is open on mobile: slide chat in, slide sidebar out */
+      body.dm-chat-open .dm-sidebar {
+        transform: translateX(-100%);
+      }
+      body.dm-chat-open .dm-chat-area {
+        transform: translateX(0);
+      }
+
+      /* Larger tap targets on mobile */
+      .dm-user-item { padding: 14px 16px; }
+      .dm-full-input-row { padding: 12px 14px; }
+      .dm-full-header { padding: 14px 16px; }
+
+      /* Search panel: full width on mobile */
       #searchPanel {
-        left: var(--nav-w);
-        right: var(--dm-w);
-        width: auto;
+        left: 0;
+        right: 0;
+        width: 100%;
         transform: none;
         top: auto;
-        bottom: 80px;
-        max-height: 50vh;
+        bottom: 0;
+        max-height: 70vh;
+        border-radius: 20px 20px 0 0;
+      }
+      #searchPanel.open { transform: none; }
+
+      /* Main content: no margin on mobile */
+      .main-content {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
       }
 
-      #searchPanel.open {
-        transform: none;
+      /* Dock nav on mobile: horizontal bottom bar */
+      .dock-nav-wrap {
+        top: auto;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+        height: 64px;
+        align-items: flex-end;
+        justify-content: center;
+        padding-bottom: 0;
+      }
+      .dock-panel {
+        flex-direction: row;
+        width: 100%;
+        height: 64px;
+        border-radius: 20px 20px 0 0;
+        padding: 10px 24px;
+        gap: 0;
+        justify-content: space-around;
+      }
+      .dock-divider {
+        width: 1px;
+        height: 28px;
+        background: rgba(0,0,0,0.08);
+      }
+      .dock-label { display: none; }
+      .dock-item::before { display: none; }
+      .dock-item { width: 44px !important; height: 44px !important; }
+
+      /* Page bottom padding so content clears the dock */
+      .main-content {
+        padding-bottom: 80px !important;
       }
     }
 
@@ -1136,6 +1228,11 @@
         <span class="dock-label">Search</span>
       </a>
 
+      <div class="dock-divider"></div>
+      <a href="#" class="dock-item" id="dmNavBtn" aria-label="Messages" onclick="openDMHub(event)">
+        <span class="dock-icon"><i class="fas fa-comment-dots"></i></span>
+        <span class="dock-label">Messages</span>
+      </a>
       <div class="dock-divider"></div>
       <a href="/posts/{{ current_user.username }}"
         class="dock-item nav-profile-link {% block nav_profile %}{% endblock %}" aria-label="Profile">
@@ -1258,6 +1355,9 @@
       <div class="dm-chat-area">
         <div class="dm-full-header">
           <div class="dm-full-header-left">
+            <button class="dm-back-btn" onclick="dmBackToList()" title="Back" aria-label="Back to contacts">
+              <i class="fas fa-arrow-left"></i>
+            </button>
             <div class="dm-full-avatar" id="dmFullAvatar">?</div>
             <div>
               <div class="dm-full-name" id="dmFullName">Select a chat</div>
@@ -1381,15 +1481,16 @@
     window.CURRENT_USER = "{{ current_user.username }}";
     let activeDMUser = null;
     let dmPollTimer = null;
-    let lastMsgCount = 0;
+    let lastMsgId = -1;  // track by ID, not count — avoids race condition skips
 
     function openDMHub(e) {
       if (e && e.target.closest('.dm-rail-avatar')) return;
       if (e) e.stopPropagation();
       triggerDMTransition(function () {
         document.body.classList.add('messaging-mode');
+        document.body.classList.remove('dm-chat-open');
         activeDMUser = null;
-        lastMsgCount = 0;
+        lastMsgId = -1;
         stopDMPolling();
         document.querySelectorAll('.dm-rail-avatar, .dm-user-item').forEach(function (a) { a.classList.remove('active'); });
         document.getElementById('dmFullName').textContent = 'Select a chat';
@@ -1407,6 +1508,7 @@
       triggerDMTransition(function () {
         activeDMUser = username;
         document.body.classList.add('messaging-mode');
+        document.body.classList.add('dm-chat-open');  // mobile: slide to chat view
         document.getElementById('dmFullName').textContent = username;
         document.getElementById('dmFullStatus').textContent = 'Direct Message';
         document.getElementById('dmInputRow').classList.remove('hidden');
@@ -1421,7 +1523,7 @@
         var userItem = document.getElementById('dm-user-' + username);
         if (userItem) userItem.classList.add('active');
 
-        lastMsgCount = 0;
+        lastMsgId = -1;
         loadMessages(username);
         startDMPolling();
 
@@ -1437,10 +1539,18 @@
     function closeDMChat() {
       triggerDMTransition(function () {
         document.body.classList.remove('messaging-mode');
+        document.body.classList.remove('dm-chat-open');
         document.querySelectorAll('.dm-rail-avatar, .dm-user-item').forEach(function (a) { a.classList.remove('active'); });
         activeDMUser = null;
         stopDMPolling();
       });
+    }
+
+    // Mobile: go back to contacts list without closing DM
+    function dmBackToList() {
+      document.body.classList.remove('dm-chat-open');
+      activeDMUser = null;
+      stopDMPolling();
     }
 
     function toggleAddFriendForm(e) {
@@ -1484,10 +1594,19 @@
 
     function loadMessages(username) {
       fetch('/api/messages/' + encodeURIComponent(username))
-        .then(function (r) { return r.json(); })
-        .then(function (data) {
-          if (data.error) return;
-          renderMessages(data.messages);
+        .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
+        .then(function (res) {
+          if (!res.ok || res.data.error) {
+            var box = document.getElementById('dmFullMessages');
+            box.innerHTML = '<div class="dm-empty" style="color:#ff6b6b;"><i class="fas fa-exclamation-circle"></i><br>' +
+              (res.data.error || 'Could not load messages.') + '</div>';
+            // Hide input if not friends
+            if (res.data.error && res.data.error.includes('friend')) {
+              document.getElementById('dmInputRow').classList.add('hidden');
+            }
+            return;
+          }
+          renderMessages(res.data.messages);
         });
     }
 
@@ -1495,11 +1614,12 @@
       var box = document.getElementById('dmFullMessages');
       if (!msgs || !msgs.length) {
         box.innerHTML = '<div class="dm-empty"><i class="far fa-comment-dots"></i>Start a conversation</div>';
-        lastMsgCount = 0;
+        lastMsgId = -1;
         return;
       }
-      if (msgs.length === lastMsgCount) return;
-      lastMsgCount = msgs.length;
+      var newestId = msgs[msgs.length - 1].id;
+      if (newestId === lastMsgId) return;  // nothing new
+      lastMsgId = newestId;
       box.innerHTML = msgs.map(function (m) {
         var cls = m.from_me ? 'me' : 'them';
         var content = '';
@@ -1587,7 +1707,7 @@
             if (!res.ok) { alert(res.data.error || 'Failed to send.'); return; }
             input.value = '';
             clearDMAttach();
-            lastMsgCount = 0;
+            lastMsgId = -1;
             loadMessages(activeDMUser);
           })
           .catch(function () { btn.disabled = false; });
@@ -1600,9 +1720,18 @@
         }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
           .then(function (res) {
             btn.disabled = false;
-            if (!res.ok) { alert(res.data.error || 'Failed to send.'); return; }
+            if (!res.ok) {
+              // Show error in chat window instead of blocking alert
+              var box = document.getElementById('dmFullMessages');
+              var errDiv = document.createElement('div');
+              errDiv.style.cssText = 'text-align:center;font-size:12px;color:#ff6b6b;padding:8px 16px;';
+              errDiv.textContent = '⚠ ' + (res.data.error || 'Failed to send.');
+              box.appendChild(errDiv);
+              box.scrollTop = box.scrollHeight;
+              return;
+            }
             input.value = '';
-            lastMsgCount = 0;
+            lastMsgId = -1;
             loadMessages(activeDMUser);
           })
           .catch(function () { btn.disabled = false; });
@@ -1618,7 +1747,7 @@
 
     function stopDMPolling() {
       if (dmPollTimer) { clearInterval(dmPollTimer); dmPollTimer = null; }
-      lastMsgCount = 0;
+      lastMsgId = -1;
     }
 
     function toggleSearchPanel() {
