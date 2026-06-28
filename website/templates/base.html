@@ -1593,7 +1593,7 @@
     }
 
     function loadMessages(username) {
-      fetch('/api/messages/' + encodeURIComponent(username))
+      fetch('/api/messages?username=' + encodeURIComponent(username))
         .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
         .then(function (res) {
           if (!res.ok || res.data.error) {

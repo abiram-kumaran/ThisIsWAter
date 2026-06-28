@@ -362,10 +362,13 @@ def are_friends(user1_id, user2_id):
     return fr is not None
 
 
-@views.route("/api/messages/<username>")
+@views.route("/api/messages")
 @login_required
-def get_messages(username):
-    other = User.query.filter_by(username=username).first()
+def get_messages():
+    username = request.args.get('username', '').strip()
+    if not username:
+        return jsonify({'error': 'Username is required.'}), 400
+    other = User.query.filter(User.username.ilike(username)).first()
     if not other:
         return jsonify({'error': 'User not found.'}), 404
     if other.id == current_user.id:
@@ -406,7 +409,7 @@ def send_message():
     if len(text) > 500:
         return jsonify({'error': 'Message too long.'}), 400
 
-    receiver = User.query.filter_by(username=username).first()
+    receiver = User.query.filter(User.username.ilike(username)).first()
     if not receiver:
         return jsonify({'error': 'User not found.'}), 404
     if receiver.id == current_user.id:
@@ -446,7 +449,7 @@ def send_dm_file():
     if not username:
         return jsonify({'error': 'Username is required.'}), 400
 
-    receiver = User.query.filter_by(username=username).first()
+    receiver = User.query.filter(User.username.ilike(username)).first()
     if not receiver:
         return jsonify({'error': 'User not found.'}), 404
     if receiver.id == current_user.id:
