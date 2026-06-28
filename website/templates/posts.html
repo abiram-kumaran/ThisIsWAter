@@ -304,6 +304,38 @@
   body:not(.auth-page):not(.messaging-mode) .bio-save {
     color: #fff !important;
   }
+
+  /* ── Mobile ── */
+  @media (max-width: 640px) {
+    .profile-page { min-height: unset; }
+    .profile-top {
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 20px;
+      padding-bottom: 18px;
+    }
+    .profile-avatar {
+      width: 72px !important; height: 72px !important;
+      font-size: 24px !important;
+    }
+    .profile-info h2 { font-size: 18px !important; }
+    .bio-text { font-size: 13px; }
+    .avatar-btn { font-size: 10px; padding: 3px 8px; }
+
+    .bio-modal { padding: 20px 16px; }
+    .bio-modal-actions button { padding: 9px 16px; font-size: 12px; }
+
+    .card-body { padding: 12px 14px; }
+    .card-header { padding: 10px 14px; }
+    .comment-form input { font-size: 13px; }
+
+    .logout-btn { padding: 10px 24px; font-size: 13px; }
+    .profile-footer { padding-top: 28px; }
+  }
+
+  @media (min-width: 641px) and (max-width: 1024px) {
+    .profile-page { max-width: min(640px, 90%); }
+  }
 </style>
 {% endblock %}
 

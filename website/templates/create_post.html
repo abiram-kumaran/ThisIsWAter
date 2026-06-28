@@ -55,6 +55,14 @@
   body:not(.auth-page):not(.messaging-mode) .btn-post {
     color: #fff !important;
   }
+
+  @media (max-width: 640px) {
+    .create-page { padding-top: 16px; }
+    .create-page h1 { font-size: 18px !important; margin-bottom: 16px; }
+    .create-form { border-radius: 16px; padding: 16px; }
+    .create-form textarea { min-height: 130px; font-size: 14px; padding: 12px; }
+    .create-actions button, .create-actions a { padding: 11px 22px; font-size: 13px; }
+  }
 </style>
 {% endblock %}
 

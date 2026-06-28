@@ -7,6 +7,7 @@
   .home-layout {
     max-width: min(640px, 100%);
     margin: 0 auto;
+    padding-top: clamp(80px, 11vh, 110px);
   }
 
   /* ── Feed header ── */
@@ -288,6 +289,47 @@
   body:not(.auth-page):not(.messaging-mode) .sugg-add-btn:disabled { color: #999 !important; }
   body:not(.auth-page):not(.messaging-mode) .suggestions-popup-close { color: #bbb !important; font-weight: 400 !important; }
   body:not(.auth-page):not(.messaging-mode) .suggestions-popup { color: #111 !important; }
+
+  /* ── Mobile overrides ── */
+  @media (max-width: 640px) {
+    .home-layout { padding: 0; }
+    .feed-header { margin-bottom: 16px; padding-bottom: 12px; }
+
+    /* Logo smaller on mobile */
+    .feed-header h1 img { max-height: 44px !important; }
+
+    /* Cards tighter on mobile */
+    .card { border-radius: 14px; margin-bottom: 12px; }
+    .card-body { padding: 12px 14px; }
+    .card-header { padding: 10px 14px; }
+
+    /* FAB above dock */
+    .create-post-btn {
+      bottom: 76px !important;
+      font-size: 13px;
+      padding: 11px 22px;
+    }
+
+    /* Friend requests full width */
+    .friend-requests-box { border-radius: 14px; padding: 14px; }
+    .friend-accept-btn, .friend-decline-btn { padding: 5px 10px; font-size: 11px; }
+
+    /* Comment form */
+    .comment-form input { font-size: 13px; padding: 7px 12px; }
+
+    /* Suggestions popup: full width at bottom on mobile */
+    .suggestions-popup {
+      right: 8px !important;
+      left: 8px !important;
+      bottom: 76px !important;
+      width: auto !important;
+    }
+  }
+
+  @media (min-width: 641px) and (max-width: 1024px) {
+    .home-layout { max-width: min(600px, 90%); }
+    .create-post-btn { bottom: 28px; }
+  }
 </style>
 {% endblock %}
 

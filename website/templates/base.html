@@ -13,9 +13,10 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" crossorigin="anonymous"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://kit.fontawesome.com/999ca2bb93.js" crossorigin="anonymous"></script>
-  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon-water.svg') }}" />
-  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}" />
-  <link rel="icon" type="image/png"   href="{{ url_for('static', filename='favicon.png') }}" />
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}" />
+  <link rel="icon" type="image/x-icon"  href="{{ url_for('static', filename='favicon.ico') }}" />
+  <link rel="icon" type="image/png"     href="{{ url_for('static', filename='favicon.png') }}" />
+  <link rel="apple-touch-icon"          href="{{ url_for('static', filename='favicon.png') }}" />
   <title>{% block title %}{% endblock %} — This is WAter.</title>
   <style>
     *,
@@ -1105,29 +1106,51 @@
 
       /* Larger tap targets on mobile */
       .dm-user-item { padding: 14px 16px; }
-      .dm-full-input-row { padding: 12px 14px; }
-      .dm-full-header { padding: 14px 16px; }
+      .dm-full-input-row { padding: 10px 12px; gap: 6px; }
+      .dm-full-header { padding: 12px 14px; }
 
-      /* Search panel: full width on mobile */
+      /* Smaller attach/send on mobile */
+      .dm-attach-btn, .dm-send-btn { width: 38px; height: 38px; font-size: 14px; }
+      .dm-full-input-row input { padding: 10px 14px; font-size: 14px; }
+
+      /* DM bubbles wider on mobile */
+      .dm-bubble { max-width: min(88%, 400px); }
+
+      /* Search panel: full-width bottom sheet on mobile */
       #searchPanel {
         left: 0;
         right: 0;
         width: 100%;
         transform: none;
         top: auto;
-        bottom: 0;
+        bottom: 64px;  /* above the dock */
         max-height: 70vh;
         border-radius: 20px 20px 0 0;
       }
       #searchPanel.open { transform: none; }
 
-      /* Main content: no margin on mobile */
+      /* Main content: no side margins, bottom pad for dock */
       .main-content {
         margin-left: 0 !important;
         margin-right: 0 !important;
+        padding: 16px 14px 96px !important;
       }
 
-      /* Dock nav on mobile: horizontal bottom bar */
+      /* Auth pages: full height, no extra padding */
+      body.auth-page .main-content {
+        padding: 0 !important;
+      }
+
+      /* Alert: full width at top */
+      .alert {
+        top: 10px;
+        right: 10px;
+        left: 10px;
+        min-width: unset;
+        width: auto;
+      }
+
+      /* Dock nav: horizontal bottom bar */
       .dock-nav-wrap {
         top: auto;
         bottom: 0;
@@ -1138,28 +1161,50 @@
         align-items: flex-end;
         justify-content: center;
         padding-bottom: 0;
+        pointer-events: auto;
       }
       .dock-panel {
         flex-direction: row;
         width: 100%;
         height: 64px;
         border-radius: 20px 20px 0 0;
-        padding: 10px 24px;
+        padding: 8px 16px;
         gap: 0;
         justify-content: space-around;
+        align-items: center;
       }
       .dock-divider {
         width: 1px;
-        height: 28px;
+        height: 24px;
         background: rgba(0,0,0,0.08);
+      }
+      body.messaging-mode .dock-divider {
+        background: rgba(255,255,255,0.1);
       }
       .dock-label { display: none; }
       .dock-item::before { display: none; }
       .dock-item { width: 44px !important; height: 44px !important; }
+      .dock-panel::before { display: none; }
 
-      /* Page bottom padding so content clears the dock */
+      /* Spring magnification off on mobile — no mouse */
+      .dock-item { transform: none !important; }
+    }
+
+    /* ── Tablet (641px–1024px) ── */
+    @media (min-width: 641px) and (max-width: 1024px) {
+      :root {
+        --nav-w: clamp(60px, 5vw, 72px);
+        --dm-w: clamp(50px, 4.5vw, 64px);
+      }
+
       .main-content {
-        padding-bottom: 80px !important;
+        padding: 20px 16px 60px !important;
+      }
+
+      .dm-sidebar { width: min(240px, 30vw); }
+
+      #searchPanel {
+        width: min(320px, calc(100vw - var(--nav-w) - var(--dm-w) - 24px));
       }
     }
 
