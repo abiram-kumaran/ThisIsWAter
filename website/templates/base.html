@@ -1091,9 +1091,45 @@
       .dm-chat-area {
         position: absolute;
         inset: 0;
+        bottom: 64px;  /* stay above bottom dock bar */
         z-index: 1;
         transform: translateX(100%);
         transition: transform 0.3s cubic-bezier(0.22,1,0.36,1);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      /* Messages area fills remaining space and scrolls */
+      .dm-chat-area .dm-full-messages {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+      }
+
+      /* Input row must never be hidden or shrunk */
+      .dm-chat-area .dm-full-input-row {
+        flex-shrink: 0 !important;
+        opacity: 1;
+        position: relative;
+        z-index: 10;
+        padding: 10px 12px;
+        background: #000;
+      }
+
+      .dm-chat-area .dm-full-input-row.hidden {
+        opacity: 0.3;
+        pointer-events: none;
+      }
+
+      /* Attach preview bar also shrink-proof */
+      .dm-chat-area #dmAttachPreview {
+        flex-shrink: 0 !important;
+      }
+
+      /* Also keep sidebar above the dock */
+      .dm-sidebar {
+        bottom: 64px !important;
       }
 
       /* When a chat is open on mobile: slide chat in, slide sidebar out */
